@@ -1,0 +1,5 @@
+run_id=exp-06-final-c2-netpol-health-r3
+start=2026-10-09T02:41:49Z
+end=2026-10-09T02:43:49Z
+script=tests/k6/health-path.js vus=1 duration=2m base_url=http://localhost:8010
+valid=true (no pod restarts during run)

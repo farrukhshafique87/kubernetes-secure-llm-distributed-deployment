@@ -1,0 +1,5 @@
+run_id=exp-06-final-c2-netpol-r2
+start=2026-10-09T00:43:30Z
+end=2026-10-09T00:48:31Z
+script=tests/k6/baseline.js vus=1 duration=5m base_url=http://localhost:8010
+valid=true (no pod restarts during run)

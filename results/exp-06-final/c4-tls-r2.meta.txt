@@ -1,0 +1,5 @@
+run_id=exp-06-final-c4-tls-r2
+start=2026-10-09T01:14:45Z
+end=2026-10-09T01:19:48Z
+script=tests/k6/baseline.js vus=1 duration=5m base_url=https://localhost:8443
+valid=true (no pod restarts during run)

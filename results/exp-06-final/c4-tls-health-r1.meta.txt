@@ -1,0 +1,5 @@
+run_id=exp-06-final-c4-tls-health-r1
+start=2026-10-08T23:33:52Z
+end=2026-10-08T23:35:52Z
+script=tests/k6/health-path.js vus=1 duration=2m base_url=https://localhost:8443
+valid=true (no pod restarts during run)
