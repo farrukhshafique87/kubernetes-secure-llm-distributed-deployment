@@ -18,8 +18,8 @@ help:
 	@echo "Run one env at a time: pause-<env> / resume-<env>"
 
 format:
-	black apps
-	isort apps
+	ruff format apps
+	ruff check --fix apps
 
 lint:
 	ruff check apps

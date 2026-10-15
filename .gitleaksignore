@@ -1,0 +1,3 @@
+# Fake API key used only by the gateway unit tests (not a real credential).
+# Reviewed 2026-10-15: value "test-api-key-..." grants access to nothing.
+b74dea9018cde9aad6bc0a179bea5d10cc59db60:apps/llm-gateway/tests/test_gateway.py:generic-api-key:11
