@@ -89,6 +89,35 @@ non-root user (UID 10001) with all Linux capabilities dropped in every configura
 including C0, so this hardening is not counted as overhead. The Ollama container runs with
 the image defaults (no `securityContext`).
 
+## Quick start (baseline C0)
+
+Requirements: Docker Desktop (WSL2 backend on Windows), kind, kubectl, make, curl.
+Run in WSL2 or another Linux shell. Versions used: see [Tech stack](#tech-stack).
+
+```bash
+git clone https://github.com/farrukhshafique87/secure-llm-serving-kubernetes.git && cd secure-llm-serving-kubernetes
+make kind-up               # Kind cluster (1 control-plane + 2 workers) with Calico
+make build load            # build llm-api:1.0.0 and load it into Kind
+make deploy-baseline       # deploy C0
+make pull-model-baseline   # pull qwen2.5:0.5b into Ollama
+curl -s -X POST localhost:8010/chat -H 'Content-Type: application/json' -d '{"prompt":"Explain Kubernetes in one sentence."}'
+```
+
+Example response from my machine (CPU inference, 2.8 s):
+
+```json
+{"response":"Kubernetes is a popular open-source platform for managing and deploying containerized applications. It allows developers to easily scale, deploy, and manage applications in a scalable and fault-tolerant manner.","generated_tokens":39,"tokens_per_second":15.598}
+```
+
+Tested on 2026-10-15 from a fresh clone on an existing Kind cluster: `make kind-up` skipped
+cluster creation, all other steps ran as shown. Cluster creation itself was not re-tested on
+that day.
+
+Secure configuration (C6, needs Helm): `make secrets ingress linkerd`, `make build-gateway load-gateway`,
+`make deploy-secure`, `make pull-model-secure`. Only one environment should run at a time:
+`make pause-baseline` before starting another one (`make help` lists all targets).
+`make kind-down` deletes the whole cluster.
+
 ## Results (EXP-06)
 
 Average latency with min-max over 3 repetitions. Δ is the difference to the baseline C0.
@@ -189,6 +218,32 @@ prints the error output of any failed check.
   hardened (non-root, capabilities dropped).
 - **Early verification runs did not record error output.** The cause of the first C2 failure
   therefore cannot be explained afterwards (see note above).
+
+## What I learned
+
+- **Where you measure decides what you see.** All controls together added about 5 ms per
+  request on `/health` (+257 %), but on `/chat` that cost disappeared behind about 2 s of
+  inference. Without the lightweight path, my benchmark would have reported "no overhead".
+- **Not every security control costs the same.** RBAC and NetworkPolicies made no
+  measurable difference at request time. The real cost came from extra hops and extra
+  processes: the API-key gateway added the most CPU (+134 m), Linkerd the most memory (+115 MiB).
+- **A fair comparison needs controlled variables.** Fixed seed and temperature, images
+  pinned by digest, fixed node placement, interleaved runs and three repetitions. A
+  configuration that looked faster than the baseline showed me drift between runs, not a benefit.
+- **A check must be able to fail, and it must keep its error.** One NetworkPolicy check
+  failed without recording why, and I could not explain it afterwards. My verification
+  script now waits for Ready pods and prints the error of every failed check.
+- **Some Kubernetes resources are shared by the whole cluster.** A paused environment still
+  held NodePort 30010, which made resuming another environment fail halfway. I added a guard
+  that stops before `kubectl apply` when a port is already taken.
+
+## Next steps
+
+- Repeat the baseline-versus-secure comparison on a managed cloud cluster (EXP-07).
+- Add a `securityContext` to the Ollama deployment (non-root, capabilities dropped) and
+  measure whether it changes anything.
+- Test how the overhead behaves with more load and more replicas (EXP-02, EXP-03).
+- Re-test cluster creation from scratch and run an end-to-end test against a Kind cluster in CI.
 
 ## Tech stack
 
