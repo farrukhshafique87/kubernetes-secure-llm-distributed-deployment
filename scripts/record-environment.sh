@@ -33,6 +33,8 @@ F="$OUT/environment.txt"
   echo "## Network policies / CNI"
   kubectl -n "$NS" get networkpolicy 2>&1 || true
   kubectl get pods -n calico-system 2>&1 | head -5 || true
+  echo "calico version: $(kubectl get clusterinformation default -o jsonpath='{.spec.calicoVersion}' 2>&1 || true)"
+  kubectl -n calico-system get ds calico-node -o jsonpath='calico-node image={.spec.template.spec.containers[0].image}{"\n"}' 2>&1 || true
   echo "## Ingress controller / gateway / metrics server"
   helm list -n traefik 2>&1 || true
   kubectl -n traefik get deploy -o jsonpath='{range .items[*]}{.metadata.name}{" image="}{.spec.template.spec.containers[*].image}{"\n"}{end}' 2>&1 || true
