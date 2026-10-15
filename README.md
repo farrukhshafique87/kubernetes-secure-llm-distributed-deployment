@@ -89,6 +89,104 @@ non-root user (UID 10001) with all Linux capabilities dropped in every configura
 including C0, so this hardening is not counted as overhead. The Ollama container runs with
 the image defaults (no `securityContext`).
 
+## Results (EXP-06)
+
+Average latency with min-max over 3 repetitions. Δ is the difference to the baseline C0.
+"Higher" or "lower" means the min-max range does not overlap with the baseline's;
+otherwise the difference is "within noise".
+
+### Lightweight path `/health` (no inference): cost of the controls per request
+
+| Config | Avg ms | Δ ms | Δ % | P95 ms | P99 ms | Verdict |
+| --- | --- | --- | --- | --- | --- | --- |
+| C0 baseline | 1.95 (1.89-2.02) | - | - | 2.57 | 3.15 | reference |
+| C1 RBAC | 1.97 (1.93-2.03) | +0.03 | +1.3 | 2.61 | 3.30 | within noise |
+| C2 NetworkPolicies | 1.93 (1.88-2.01) | -0.01 | -0.6 | 2.55 | 3.23 | within noise |
+| C3 mTLS | 2.31 (2.24-2.38) | +0.36 | +18.6 | 2.99 | 3.89 | higher |
+| C4 TLS | 2.70 (2.65-2.76) | +0.75 | +38.6 | 3.37 | 4.29 | higher |
+| C5 gateway | 4.36 (4.32-4.44) | +2.42 | +124.2 | 5.54 | 7.50 | higher |
+| C6 all | 6.94 (6.34-8.07) | +4.99 | +256.7 | 8.93 | 11.82 | higher |
+
+RBAC and NetworkPolicies add no measurable latency. The gateway is the most expensive single
+control, because it adds a second HTTP hop.
+
+### Inference path `/chat`: realistic end-to-end cost
+
+| Config | Avg ms | Δ ms | Δ % | P95 ms | P99 ms | Verdict |
+| --- | --- | --- | --- | --- | --- | --- |
+| C0 baseline | 2146.38 (2021.21-2316.47) | - | - | 2422.84 | 2691.04 | reference |
+| C1 RBAC | 2013.77 (1975.77-2088.69) | -132.62 | -6.2 | 2165.50 | 2242.65 | within noise |
+| C2 NetworkPolicies | 2023.60 (1982.51-2074.37) | -122.78 | -5.7 | 2168.23 | 2263.48 | within noise |
+| C3 mTLS | 1914.69 (1827.93-2004.16) | -231.70 | -10.8 | 2012.70 | 2121.53 | lower (drift) |
+| C4 TLS | 2018.81 (1995.86-2062.44) | -127.57 | -5.9 | 2190.46 | 2358.17 | within noise |
+| C5 gateway | 2059.76 (2025.81-2111.31) | -86.63 | -4.0 | 2303.58 | 3075.00 | within noise |
+| C6 all | 1971.14 (1950.23-1985.36) | -175.25 | -8.2 | 2076.67 | 2169.27 | lower (drift) |
+
+A configuration that is faster than the baseline cannot be a cost of the control: it shows
+drift between runs. The milliseconds added by the controls are hidden by about 2 s of inference.
+
+### Resources on the `/health` path (50 requests/s)
+
+Mean CPU (millicores) and memory (MiB) of the pods in the request path.
+
+| Config | Pods summed | CPU m | Δ CPU m | Memory MiB | Δ Memory MiB |
+| --- | --- | --- | --- | --- | --- |
+| C0 baseline | fastapi | 86 | - | 46 | - |
+| C1 RBAC | fastapi | 86 | +0 | 45 | -1 |
+| C2 NetworkPolicies | fastapi | 86 | -1 | 45 | -0 |
+| C3 mTLS | fastapi + Linkerd control plane | 113 | +26 | 161 | +115 |
+| C4 TLS | fastapi, traefik | 130 | +44 | 149 | +104 |
+| C5 gateway | fastapi, gateway | 220 | +134 | 92 | +47 |
+| C6 all | all of the above | 365 | +279 | 309 | +264 |
+
+Source: [`results/exp-06-final/overhead-summary.md`](results/exp-06-final/overhead-summary.md).
+
+## How it was measured
+
+| Item | Setting |
+| --- | --- |
+| Load generator | k6 v2.0.0 on the WSL2 host |
+| `/chat` | 1 virtual user, 5 minutes per run ([`tests/k6/baseline.js`](tests/k6/baseline.js)) |
+| `/health` | constant 50 requests/s, 2 minutes per run ([`tests/k6/health-path.js`](tests/k6/health-path.js)) |
+| Repetitions | 3 per configuration, configurations interleaved (C0, C1, ... C0, C1, ...) |
+| Inference | qwen2.5:0.5b, temperature 0, seed 42, 64 output tokens, model kept loaded |
+| Validity | a run counts only if no pod restarted during it |
+| Run window | 2026-10-08 22:21 UTC to 2026-10-09 03:44 UTC |
+| Host | Windows 11, WSL2, 8 CPU cores, 10 GiB memory for WSL |
+
+Full protocol: [`docs/research/experiment-methodology.md`](docs/research/experiment-methodology.md).
+
+## Security verification (EXP-05)
+
+Before measuring, each control was tested with [`scripts/verify-controls.sh`](scripts/verify-controls.sh).
+
+| Configuration | Checks passed | Examples |
+| --- | --- | --- |
+| C1 RBAC | 5 of 5 | API pod has no API token mounted; its ServiceAccount cannot list pods |
+| C3 mTLS | 3 of 3 | Linkerd proxy in the API and Ollama pods; API to Ollama traffic is mTLS |
+| C6 all | 12 of 12 | all of the above, plus: API cannot reach the internet, gateway cannot reach Ollama |
+| C2 NetworkPolicies | 1 of 2 | see note |
+
+Note on C2: the standalone C2 check reported "API to Ollama" as blocked, although it should
+be allowed. In the EXP-06 C2 load runs, every `/chat` request succeeded (98 of 98 and
+101 of 101 in runs 1 and 2), and `/chat` needs exactly that connection. The cause of the
+failed check is not yet explained; the check will be re-run. Evidence:
+[`results/exp-05-security-verification/`](results/exp-05-security-verification/).
+
+## Limitations
+
+- **One local machine.** All results come from Kind on one WSL2 host. They do not
+  automatically apply to a managed cloud cluster; the cloud comparison (EXP-07) is planned.
+- **Three repetitions per configuration.** Enough to separate clear effects from noise, not
+  for fine statistical claims.
+- **Small model, CPU inference.** qwen2.5:0.5b on CPU. Larger models were not tested; slower
+  inference would be expected to hide the controls' cost on `/chat` even more.
+- **One replica per workload.** Scaling behaviour was not measured.
+- **Self-signed certificate.** TLS uses a lab certificate, not one from a public CA.
+- **Ollama runs without a `securityContext`.** Only the API and gateway containers are
+  hardened (non-root, capabilities dropped).
+- **The C2 verification failure above is open.**
+
 ## Tech stack
 
 Versions as recorded in the environment file of the final run
