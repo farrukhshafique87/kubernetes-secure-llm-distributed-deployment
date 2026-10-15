@@ -8,6 +8,10 @@ name: CI
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   lint:
     name: Lint (ruff)
@@ -43,3 +47,41 @@ jobs:
         run: pip install -r requirements-dev.txt
       - name: Run tests
         run: pytest -v
+
+  validate:
+    name: Validate YAML and manifests
+    runs-on: ubuntu-24.04
+    env:
+      KUBECONFORM_VERSION: v0.8.0
+      KUBECONFORM_SHA256: 9bc2bffbf71f261128533edaf912153948b7ff238f9a531ae6d34466ec287883
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install yamllint
+        run: pip install yamllint==1.37.1
+      - name: Install kubeconform (checksum verified)
+        run: |
+          cd "$RUNNER_TEMP"
+          url="https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}"
+          curl -sSfLO "${url}/kubeconform-linux-amd64.tar.gz"
+          echo "${KUBECONFORM_SHA256}  kubeconform-linux-amd64.tar.gz" | sha256sum -c -
+          tar xzf kubeconform-linux-amd64.tar.gz kubeconform
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Run yamllint
+        run: yamllint .
+      - name: Create throwaway secrets (validation only, never deployed)
+        run: |
+          cp kubernetes/components/gateway/gateway.env.example kubernetes/components/gateway/gateway.env
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj "/CN=ci.invalid" \
+            -keyout kubernetes/components/ingress-tls/tls.key \
+            -out kubernetes/components/ingress-tls/tls.crt
+      - name: Validate Kustomize overlays
+        run: |
+          for overlay in kubernetes/overlays/*/; do
+            echo "== ${overlay}"
+            kubectl kustomize "${overlay}" | kubeconform -strict -summary
+          done
+      - name: Validate monitoring manifests
+        run: kubeconform -strict -summary monitoring/
