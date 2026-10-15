@@ -2,7 +2,9 @@
 # Functional checks of the security controls in one namespace.
 # Usage: verify-controls.sh <namespace>
 # Checks only what is deployed in the namespace (RBAC objects, NetworkPolicies,
-# gateway). Exit code 1 if any check fails.
+# gateway). Exit code 1 if any check fails, 2 if the pods never become Ready.
+# A failing check prints the last lines of the command output, so the cause is
+# recorded (a check that hides its error cannot be explained afterwards).
 set -uo pipefail
 NS="${1:?usage: verify-controls.sh <namespace>}"
 PASS=0
@@ -10,14 +12,15 @@ FAIL=0
 
 # check "<description>" <yes|no> <command...>   (yes = command must succeed)
 check() {
-  local desc="$1" expected="$2" result
+  local desc="$1" expected="$2" result out
   shift 2
-  if "$@" >/dev/null 2>&1; then result=yes; else result=no; fi
+  if out=$("$@" 2>&1); then result=yes; else result=no; fi
   if [ "$result" = "$expected" ]; then
     echo "PASS  $desc"
     PASS=$((PASS + 1))
   else
     echo "FAIL  $desc (expected $expected, got $result)"
+    printf '%s\n' "$out" | tail -n 5 | sed 's/^/      | /'
     FAIL=$((FAIL + 1))
   fi
 }
@@ -27,6 +30,14 @@ fetch() {
   kubectl -n "$NS" exec "deploy/$1" -c "$1" -- python -c \
     "import sys, urllib.request; urllib.request.urlopen(sys.argv[1], timeout=4)" "$2"
 }
+
+# Checks right after a rollout can fail only because a pod is not Ready yet.
+echo "Waiting for all pods in $NS to be Ready..."
+if ! kubectl -n "$NS" wait --for=condition=Ready pod --all --timeout=180s >/dev/null; then
+  echo "ERROR: pods in $NS are not Ready; no checks were run."
+  kubectl -n "$NS" get pods
+  exit 2
+fi
 
 token_not_mounted() {
   [ "$(kubectl -n "$NS" get deploy "$1" -o jsonpath='{.spec.template.spec.automountServiceAccountToken}')" = "false" ]
