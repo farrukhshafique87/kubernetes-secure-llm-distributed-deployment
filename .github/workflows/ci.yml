@@ -85,3 +85,43 @@ jobs:
           done
       - name: Validate monitoring manifests
         run: kubeconform -strict -summary monitoring/
+
+  build:
+    name: Build image (${{ matrix.app }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: llm-api
+            port: 8000
+            health: /health
+          - app: llm-gateway
+            port: 8080
+            health: /_gateway/health
+    env:
+      IMAGE: ${{ matrix.app }}:ci
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build image
+        run: docker build -t "${IMAGE}" "apps/${{ matrix.app }}"
+      - name: Check the container does not run as root
+        run: |
+          uid="$(docker run --rm --entrypoint id "${IMAGE}" -u)"
+          echo "Container user id: ${uid}"
+          test "${uid}" != "0"
+      - name: Smoke test (start container, call health endpoint)
+        run: |
+          docker run -d --name smoke -p "9000:${{ matrix.port }}" \
+            -e API_KEY=ci-only-dummy-key-0123456789 "${IMAGE}"
+          for i in $(seq 1 30); do
+            if curl -fsS "http://localhost:9000${{ matrix.health }}"; then
+              echo
+              echo "Healthy after ${i} attempt(s)"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Container did not become healthy. Logs:"
+          docker logs smoke
+          exit 1
