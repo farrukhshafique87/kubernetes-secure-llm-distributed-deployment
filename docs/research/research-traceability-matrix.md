@@ -71,11 +71,11 @@ Workload intensity (EXP-02), replica count (EXP-03) and resource limits (EXP-04)
 | RQ1 | EXP-02 | Operating point | VUs / request rate    | L T E C M   | Planned   |
 | RQ1 | EXP-03 | Sensitivity     | Replica count         | L T E C M   | Planned   |
 | RQ1 | EXP-04 | Sensitivity     | CPU / memory limits   | L T E C M   | Planned   |
-| RQ1 | EXP-05 | Verification    | Controls work         | A B         | Planned   |
-| RQ1 | EXP-06 | Primary         | Baseline vs secure    | L T E C M S | Planned   |
+| RQ1 | EXP-05 | Verification    | Controls work         | A B         | Completed |
+| RQ1 | EXP-06 | Primary         | Baseline vs secure    | L T E C M S | Kind done |
 | RQ2 | EXP-07 | Primary         | Kind vs managed cloud | L T E C M S | Planned   |
-| RQ3 | EXP-05 | Verification    | Per-control checks    | A B         | Planned   |
-| RQ3 | EXP-06 | Primary         | One control at a time | L T E C M S | Planned   |
+| RQ3 | EXP-05 | Verification    | Per-control checks    | A B         | Completed |
+| RQ3 | EXP-06 | Primary         | One control at a time | L T E C M S | Kind done |
 
 EXP-00 is *Partial* until CPU and memory collection (Metrics Server or cAdvisor) is verified, because Prometheus currently scrapes the FastAPI service only.
 
