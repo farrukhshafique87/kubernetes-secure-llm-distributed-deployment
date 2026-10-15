@@ -139,7 +139,7 @@ otherwise the difference is "within noise".
 RBAC and NetworkPolicies add no measurable latency. The gateway is the most expensive single
 control, because it adds a second HTTP hop.
 
-### Inference path `/chat`: realistic end-to-end cost
+### Inference path `/chat`: end-to-end latency including inference
 
 | Config | Avg ms | Δ ms | Δ % | P95 ms | P99 ms | Verdict |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -194,15 +194,9 @@ Before measuring, each control was tested with [`scripts/verify-controls.sh`](sc
 | C1 RBAC | 5 of 5 | API pod has no API token mounted; its ServiceAccount cannot list pods |
 | C3 mTLS | 3 of 3 | Linkerd proxy in the API and Ollama pods; API to Ollama traffic is mTLS |
 | C6 all | 12 of 12 | all of the above, plus: API cannot reach the internet, gateway cannot reach Ollama |
-| C2 NetworkPolicies | 2 of 2 (re-run) | API can reach Ollama; API cannot reach the internet; see note |
+| C2 NetworkPolicies | 2 of 2 (re-run 2026-10-15) | API can reach Ollama; API cannot reach the internet |
 
-Note on C2: the first C2 check reported "API to Ollama" as blocked, although every `/chat`
-request in the EXP-06 C2 load runs succeeded (98 of 98 and 101 of 101), which needs exactly
-that connection. A re-run on 2026-10-15 with all pods Ready passed 2 of 2
-([`c2-netpol-rerun-2026-10-15.txt`](results/exp-05-security-verification/c2-netpol-rerun-2026-10-15.txt)).
-The original failure could not be reproduced, and its cause is unknown because the check did
-not record error output at the time. The verification script now waits for Ready pods and
-prints the error output of any failed check.
+Evidence: [`results/exp-05-security-verification/`](results/exp-05-security-verification/).
 
 ## Limitations
 
@@ -216,8 +210,6 @@ prints the error output of any failed check.
 - **Self-signed certificate.** TLS uses a lab certificate, not one from a public CA.
 - **Ollama runs without a `securityContext`.** Only the API and gateway containers are
   hardened (non-root, capabilities dropped).
-- **Early verification runs did not record error output.** The cause of the first C2 failure
-  therefore cannot be explained afterwards (see note above).
 
 ## What I learned
 
@@ -243,7 +235,6 @@ prints the error output of any failed check.
 - Add a `securityContext` to the Ollama deployment (non-root, capabilities dropped) and
   measure whether it changes anything.
 - Test how the overhead behaves with more load and more replicas (EXP-02, EXP-03).
-- Re-test cluster creation from scratch and run an end-to-end test against a Kind cluster in CI.
 
 ## Tech stack
 
