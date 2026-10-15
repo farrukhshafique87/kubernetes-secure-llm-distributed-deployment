@@ -165,13 +165,15 @@ Before measuring, each control was tested with [`scripts/verify-controls.sh`](sc
 | C1 RBAC | 5 of 5 | API pod has no API token mounted; its ServiceAccount cannot list pods |
 | C3 mTLS | 3 of 3 | Linkerd proxy in the API and Ollama pods; API to Ollama traffic is mTLS |
 | C6 all | 12 of 12 | all of the above, plus: API cannot reach the internet, gateway cannot reach Ollama |
-| C2 NetworkPolicies | 1 of 2 | see note |
+| C2 NetworkPolicies | 2 of 2 (re-run) | API can reach Ollama; API cannot reach the internet; see note |
 
-Note on C2: the standalone C2 check reported "API to Ollama" as blocked, although it should
-be allowed. In the EXP-06 C2 load runs, every `/chat` request succeeded (98 of 98 and
-101 of 101 in runs 1 and 2), and `/chat` needs exactly that connection. The cause of the
-failed check is not yet explained; the check will be re-run. Evidence:
-[`results/exp-05-security-verification/`](results/exp-05-security-verification/).
+Note on C2: the first C2 check reported "API to Ollama" as blocked, although every `/chat`
+request in the EXP-06 C2 load runs succeeded (98 of 98 and 101 of 101), which needs exactly
+that connection. A re-run on 2026-10-15 with all pods Ready passed 2 of 2
+([`c2-netpol-rerun-2026-10-15.txt`](results/exp-05-security-verification/c2-netpol-rerun-2026-10-15.txt)).
+The original failure could not be reproduced, and its cause is unknown because the check did
+not record error output at the time. The verification script now waits for Ready pods and
+prints the error output of any failed check.
 
 ## Limitations
 
@@ -185,7 +187,8 @@ failed check is not yet explained; the check will be re-run. Evidence:
 - **Self-signed certificate.** TLS uses a lab certificate, not one from a public CA.
 - **Ollama runs without a `securityContext`.** Only the API and gateway containers are
   hardened (non-root, capabilities dropped).
-- **The C2 verification failure above is open.**
+- **Early verification runs did not record error output.** The cause of the first C2 failure
+  therefore cannot be explained afterwards (see note above).
 
 ## Tech stack
 

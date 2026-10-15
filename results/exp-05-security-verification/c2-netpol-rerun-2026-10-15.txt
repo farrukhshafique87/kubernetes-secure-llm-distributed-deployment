@@ -1,0 +1,6 @@
+# C2 verification re-run 2026-10-15T12:25:10Z, commit 1a23ff3, pods Ready
+== NetworkPolicies
+PASS  api -> ollama is allowed
+PASS  api -> internet is blocked
+
+passed: 2  failed: 0
