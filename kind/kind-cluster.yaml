@@ -21,10 +21,10 @@ nodes:
       - containerPort: 30010   # baseline: FastAPI NodePort  -> localhost:8010
         hostPort: 8010
         protocol: TCP
-      - containerPort: 80      # secure: NGINX Ingress HTTP  -> localhost:8080
+      - containerPort: 80      # secure: Traefik ingress HTTP  -> localhost:8080
         hostPort: 8080
         protocol: TCP
-      - containerPort: 443     # secure: NGINX Ingress HTTPS -> localhost:8443
+      - containerPort: 443     # secure: Traefik ingress HTTPS -> localhost:8443
         hostPort: 8443
         protocol: TCP
   - role: worker
