@@ -9,15 +9,15 @@ This document defines how each experiment is run. Results are stored in `results
 | ---------------- | ------------------------------------------------------------------ |
 | Research Qs      | RQ1 total overhead, RQ2 local vs cloud, RQ3 per-control            |
 | Deadline         | December 2026                                                      |
-| Model            | Qwen2.5 0.5b via Ollama (larger models too slow on the local host) |
+| Model            | Qwen2.5 0.5b via Ollama                                            |
 | Inference params | temperature 0.0, seed 42, 64 output tokens, model kept loaded      |
 | Configuration    | Kustomize: one base, overlays per environment and security level   |
 | Baseline         | `kind-baseline` overlay: no security controls                      |
 | Secure           | `kind-secure` overlay: controls added as Kustomize components      |
-| Ingress          | Traefik (ingress-nginx was retired upstream in March 2026)         |
+| Ingress          | Traefik                                                            |
 | Gateway          | Own FastAPI gateway pod: API key from a Secret, route allowlist    |
 | TLS              | Self-signed EC P-256 certificate, terminated at the ingress        |
-| mTLS             | Linkerd edge channel; Istio optional on the cloud                  |
+| mTLS             | Linkerd edge channel                                               |
 | Secure entry     | https://localhost:8443 (k6: K6_INSECURE_SKIP_TLS_VERIFY=true)      |
 | Run rule         | Only ONE environment (baseline or secure) runs at a time           |
 | CNI              | Calico in all runs (baseline and secure)                           |
@@ -57,10 +57,11 @@ the environment record (`scripts/record-environment.sh`).
 
 ## 6. Analysis
 
-Per configuration: median of repetitions with min–max spread. Overhead =
-(secured − baseline) / baseline for P50, P95, P99, throughput, CPU and memory.
-Report the spread so that differences inside the noise are not claimed as
-overhead. Report Kind and cloud results separately (RQ2).
+Per configuration: mean of the per-run averages, with the min–max spread over the
+repetitions (computed by `scripts/overhead_table.py`). Overhead =
+(secured − baseline) / baseline for average latency, P95, P99, CPU and memory.
+The spread is reported so that differences inside the noise are not claimed as
+overhead. Kind and cloud results are reported separately (RQ2).
 
 ## 7. Threats to validity
 
@@ -69,7 +70,7 @@ overhead. Report Kind and cloud results separately (RQ2).
 * CPU-only inference; results do not transfer to GPU serving.
 * Overhead of NetworkPolicies is specific to the CNI (Calico).
 * Single model, single prompt, small repetition count.
-* Cloud node types differ from the laptop; compare relative overhead only.
+* Cloud node types differ from the laptop, so only the relative overhead will be compared.
 * k6 reuses connections, so the TLS handshake cost is spread over many requests;
   handshake cost alone is not measured.
 * The lab certificate is self-signed and k6 skips certificate verification, so
