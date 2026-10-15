@@ -3,7 +3,7 @@
 set -euo pipefail
 
 CLUSTER="thesis-cluster"
-CALICO_VERSION="${CALICO_VERSION:-v3.32.2}"   # verify at docs.tigera.io, then pin
+CALICO_VERSION="${CALICO_VERSION:-v3.32.2}"   # pinned: calico-node v3.32.2 verified on the running cluster (2026-10-15)
 
 cd "$(dirname "$0")/.."
 

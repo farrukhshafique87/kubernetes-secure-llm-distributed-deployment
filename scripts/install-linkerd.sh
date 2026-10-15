@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install Linkerd (open-source edge channel) with its own certificates.
 # Certificates go to certs/linkerd/ (git-ignored) and are only created once.
-# Optional: LINKERD_CRDS_CHART_VERSION and LINKERD_CHART_VERSION pin the charts.
+# Chart versions are pinned (see below). Override: LINKERD_CRDS_CHART_VERSION, LINKERD_CHART_VERSION
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -37,10 +37,11 @@ fi
 helm repo add linkerd-edge https://helm.linkerd.io/edge >/dev/null 2>&1 || true
 helm repo update >/dev/null
 
-CRDS_ARGS=()
-CP_ARGS=()
-[ -n "${LINKERD_CRDS_CHART_VERSION:-}" ] && CRDS_ARGS=(--version "$LINKERD_CRDS_CHART_VERSION")
-[ -n "${LINKERD_CHART_VERSION:-}" ] && CP_ARGS=(--version "$LINKERD_CHART_VERSION")
+# Pinned to the charts used in the EXP-06 runs (results/exp-06-final/*-environment.txt).
+LINKERD_CRDS_CHART_VERSION="${LINKERD_CRDS_CHART_VERSION:-2026.10.1}"
+LINKERD_CHART_VERSION="${LINKERD_CHART_VERSION:-2026.10.1}"
+CRDS_ARGS=(--version "$LINKERD_CRDS_CHART_VERSION")
+CP_ARGS=(--version "$LINKERD_CHART_VERSION")
 
 helm upgrade --install linkerd-crds linkerd-edge/linkerd-crds \
   --namespace linkerd --create-namespace "${CRDS_ARGS[@]}"
