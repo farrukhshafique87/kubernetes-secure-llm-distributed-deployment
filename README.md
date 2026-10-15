@@ -48,6 +48,24 @@ flowchart LR
     traefik -- "HTTP" --> gateway
     gateway -- "mTLS (Linkerd)" --> api
     api -- "mTLS (Linkerd)" --> ollama
+
+    classDef external fill:#57606a,stroke:#24292f,color:#ffffff
+    classDef ingress fill:#9a6700,stroke:#7d4e00,color:#ffffff
+    classDef security fill:#cf222e,stroke:#82071e,color:#ffffff
+    classDef app fill:#0969da,stroke:#033d8b,color:#ffffff
+    classDef model fill:#8250df,stroke:#512a97,color:#ffffff
+    class client external
+    class traefik ingress
+    class gateway security
+    class api app
+    class ollama model
+
+    style cluster fill:#f6f8fa,stroke:#57606a,color:#24292f
+    style cp fill:#ffffff,stroke:#8c959f,color:#24292f
+    style w1 fill:#ffffff,stroke:#8c959f,color:#24292f
+    style w2 fill:#ffffff,stroke:#8c959f,color:#24292f
+
+    linkStyle default stroke:#fb8500,stroke-width:3px
 ```
 
 In C6, every pod has its own ServiceAccount (RBAC) and a default-deny NetworkPolicy allows
