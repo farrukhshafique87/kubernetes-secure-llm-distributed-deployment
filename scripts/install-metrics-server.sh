@@ -3,7 +3,10 @@
 # Kind kubelets use self-signed certificates, hence --kubelet-insecure-tls.
 set -euo pipefail
 
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# Pinned to the version used in the EXP-06 runs (results/exp-06-final/*-environment.txt).
+METRICS_SERVER_VERSION="${METRICS_SERVER_VERSION:-v0.9.0}"
+
+kubectl apply -f "https://github.com/kubernetes-sigs/metrics-server/releases/download/${METRICS_SERVER_VERSION}/components.yaml"
 
 if ! kubectl -n kube-system get deploy metrics-server -o jsonpath='{.spec.template.spec.containers[0].args}' \
   | grep -q kubelet-insecure-tls; then
