@@ -117,15 +117,18 @@ the load rises, and fixes the operating point used for EXP-03, EXP-04 and EXP-07
 | Item          | `/health` sweep                         | `/chat` sweep                    |
 | ------------- | --------------------------------------- | -------------------------------- |
 | Configs       | c0-baseline, c5-gateway, c6-all         | c0-baseline, c6-all              |
-| Levels        | 50, 100, 150, 200, 300 req/s            | 1, 2, 4 VUs (think time 1 s)     |
+| Levels        | 50, 60, 70, 80, 90, 100 req/s (c0 also 150, 200) | 1, 2, 4 VUs (think time 1 s) |
 | Executor      | constant arrival rate                   | constant VUs                     |
 | Measured run  | 2 min                                   | 3 min                            |
 | Warm-up       | 30 s, discarded                         | 1 min, discarded                 |
 | Cool-down     | 60 s                                    | 120 s                            |
 | Repetitions   | 3, interleaved over configurations      | 3, interleaved over configurations |
+| Monitoring    | `MONITOR=1` for every run               | `MONITOR=1` for every run        |
 
 C5 is included because the gateway added the largest share of the `/health`
-overhead in EXP-06. Within one configuration the levels run from lowest to
+overhead in EXP-06. The `/health` levels were chosen from the pilot (§9.5): they
+cover the range in which the gateway configurations stop keeping up; c0 also runs
+at 150 and 200 req/s to show its own headroom. Within one configuration the levels run from lowest to
 highest; the cool-down after each level separates them.
 
 Script: `scripts/measure-load.sh`; tables: `scripts/load_table.py`.
@@ -156,7 +159,29 @@ measures queueing rather than the cost of a control.
   cluster for CPU; this affects all configurations, but not necessarily equally.
 * `kubectl top` reports CPU per pod. In c6 the gateway pod also contains the
   Linkerd proxy, while the 500 m limit applies to the gateway container only.
-  Throttling counters (cAdvisor) are not collected, so saturation is inferred
-  from the achieved rate, dropped iterations and CPU close to the limit.
+  The CPU throttling of each container is therefore taken from the cAdvisor
+  counters in Prometheus (`docs/notes/monitoring.md`), not from `kubectl top`.
 * The saturation point depends on the CPU limits chosen in the manifests. EXP-04
   can test this directly by raising the gateway limit.
+
+### 9.5 Pilot (17 Oct 2026, not used for conclusions)
+
+One run per level on `/health`, without live monitoring, to choose the levels of
+the full sweep. Data: `results/exp-02-pilot/`.
+
+| Config      | 50 req/s       | 100 req/s                  | 150 req/s                  | 200 req/s                  |
+| ----------- | -------------- | -------------------------- | -------------------------- | -------------------------- |
+| c0-baseline | ok, 2.58 ms    | ok, 3.04 ms                | ok, 3.02 ms                | ok, 3.98 ms                |
+| c5-gateway  | -              | saturated, 69.5 req/s      | saturated, 35.5 req/s      | -                          |
+| c6-all      | ok, 9.29 ms    | saturated, 77.6 req/s      | saturated, 32.6 req/s      | saturated, 32.0 req/s      |
+
+Values are the average latency, or the achieved rate for saturated levels.
+
+* Both gateway configurations saturate between 50 and 100 req/s, earlier than
+  H2.2 predicted (150 to 200 req/s). H2.2 stays as stated in §9.2 and is tested
+  by the full sweep.
+* Above saturation the achieved rate falls further instead of staying at a
+  maximum, which points to queueing collapse rather than a fixed capacity limit.
+* A separate check with live monitoring (c5-gateway, 100 req/s) measured the
+  gateway container as CPU-throttled in 99.7 % of scheduler periods (maximum of
+  1-minute windows).

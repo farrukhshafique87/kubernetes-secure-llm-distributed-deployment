@@ -10,7 +10,8 @@ Reads the files written by measure-load.sh:
 
 A /health level is marked "saturated" when the system no longer keeps up with
 the requested rate: achieved rate below 95 % of the target, any dropped
-iterations, or more than 1 % failed requests.
+iterations, or more than 1 % failed requests. Saturated levels get no
+overhead value in the overhead table.
 """
 
 import csv
@@ -163,6 +164,11 @@ def main() -> None:
                 s = summary.get((c, "health", r))
                 if not (b and s):
                     cells.append("-")
+                    continue
+                if "saturated" in (b["status"], s["status"]):
+                    # Methodology section 9.3: latency of a saturated level measures
+                    # queueing, not the cost of a control.
+                    cells.append("n/a (saturated)")
                     continue
                 d = s["avg"] - b["avg"]
                 cells.append(f"{d:+.2f} ({verdict(b['avg_list'], s['avg_list'])})")
