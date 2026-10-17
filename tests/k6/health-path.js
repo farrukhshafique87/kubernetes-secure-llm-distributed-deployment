@@ -13,8 +13,9 @@ export const options = {
       rate: parseInt(__ENV.RATE || '50'),
       timeUnit: '1s',
       duration: __ENV.DURATION || '2m',
-      preAllocatedVUs: 20,
-      maxVUs: 100,
+      // Defaults match EXP-06 (50 req/s); the EXP-02 load sweep raises them.
+      preAllocatedVUs: parseInt(__ENV.PRE_VUS || '20'),
+      maxVUs: parseInt(__ENV.MAX_VUS || '100'),
     },
   },
 };
