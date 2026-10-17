@@ -105,3 +105,58 @@ Each configuration runs in its own namespace with its own model volume. Only one
 namespace is active at a time; `scripts/measure-config.sh` pauses the others,
 starts the requested one, and runs the `/chat` and `/health` tests. Repetitions
 are interleaved by looping over the configurations for each repetition.
+
+## 9. EXP-02 load sweep
+
+EXP-06 measured every configuration at one load level (`/chat` with 1 VU,
+`/health` at 50 req/s). EXP-02 tests whether the overhead stays the same when
+the load rises, and fixes the operating point used for EXP-03, EXP-04 and EXP-07.
+
+### 9.1 Design
+
+| Item          | `/health` sweep                         | `/chat` sweep                    |
+| ------------- | --------------------------------------- | -------------------------------- |
+| Configs       | c0-baseline, c5-gateway, c6-all         | c0-baseline, c6-all              |
+| Levels        | 50, 100, 150, 200, 300 req/s            | 1, 2, 4 VUs (think time 1 s)     |
+| Executor      | constant arrival rate                   | constant VUs                     |
+| Measured run  | 2 min                                   | 3 min                            |
+| Warm-up       | 30 s, discarded                         | 1 min, discarded                 |
+| Cool-down     | 60 s                                    | 120 s                            |
+| Repetitions   | 3, interleaved over configurations      | 3, interleaved over configurations |
+
+C5 is included because the gateway added the largest share of the `/health`
+overhead in EXP-06. Within one configuration the levels run from lowest to
+highest; the cool-down after each level separates them.
+
+Script: `scripts/measure-load.sh`; tables: `scripts/load_table.py`.
+Results: `results/exp-02-load/`.
+
+### 9.2 Hypotheses (stated before the runs)
+
+* **H2.1 (`/chat`).** Ollama serves one request at a time (`OLLAMA_NUM_PARALLEL=1`).
+  Throughput is therefore capped near 1 / inference time, and above 1 VU the
+  extra requests wait in a queue, so latency grows with the number of VUs. The
+  difference between c0 and c6 stays inside the run-to-run spread at every level.
+* **H2.2 (`/health`).** At low rates the c6 − c0 difference stays close to the
+  EXP-06 value (about 5 ms). It grows once a container on the path nears its CPU
+  limit. In EXP-06 the gateway used about 140 m at 50 req/s against a 500 m limit,
+  so the gateway is expected to saturate first, somewhere between 150 and 200 req/s,
+  while the baseline is expected to keep up at all tested rates.
+
+### 9.3 Saturation rule
+
+A `/health` level counts as saturated when the achieved rate is below 95 % of
+the target, k6 reports dropped iterations, or more than 1 % of requests fail.
+Latency of a saturated level is reported but not used as overhead, because it
+measures queueing rather than the cost of a control.
+
+### 9.4 Limits of this experiment
+
+* k6 runs on the same host as the Kind nodes. At high rates it competes with the
+  cluster for CPU; this affects all configurations, but not necessarily equally.
+* `kubectl top` reports CPU per pod. In c6 the gateway pod also contains the
+  Linkerd proxy, while the 500 m limit applies to the gateway container only.
+  Throttling counters (cAdvisor) are not collected, so saturation is inferred
+  from the achieved rate, dropped iterations and CPU close to the limit.
+* The saturation point depends on the CPU limits chosen in the manifests. EXP-04
+  can test this directly by raising the gateway limit.

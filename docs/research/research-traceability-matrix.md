@@ -427,12 +427,12 @@ Changes to hardware, model version, workload, resource allocation, or deployment
 | Experiment                     | Status               | Next Requirement              |
 | ------------------------------ | -------------------- | ----------------------------- |
 | EXP-00 Deployment & Monitoring | Completed / baseline | Final verification            |
-| EXP-01 Baseline Load           | Completed            | Execute and record results    |
-| EXP-02 Load & Stress           | Planned              | Design and execute            |
+| EXP-01 Baseline Load           | Completed            | -                             |
+| EXP-02 Load & Stress           | Planned              | Run sweep (methodology §9)    |
 | EXP-03 Horizontal Scaling      | Planned              | Configure and execute         |
 | EXP-04 Resource Allocation     | Planned              | Define resource profiles      |
-| EXP-05 Security Verification   | Planned              | Implement and verify controls |
-| EXP-06 Secure Performance      | Planned              | Compare baseline and secure   |
+| EXP-05 Security Verification   | Completed            | -                             |
+| EXP-06 Secure Performance      | Kind done            | Repeat on cloud (EXP-07)      |
 | EXP-07 Local vs Cloud          | Planned              | Needs managed cloud access    |
 
 ---

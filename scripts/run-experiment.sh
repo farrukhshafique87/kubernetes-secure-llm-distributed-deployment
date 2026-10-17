@@ -81,7 +81,7 @@ AFTER="$(restarts)"
   echo "run_id=$RUN_ID"
   echo "start=$START"
   echo "end=$END"
-  echo "script=$SCRIPT vus=$VUS duration=$DURATION base_url=$BASE_URL"
+  echo "script=$SCRIPT vus=$VUS rate=${RATE:--} duration=$DURATION base_url=$BASE_URL"
   if [ "$BEFORE" = "$AFTER" ]; then echo "valid=true (no pod restarts during run)"; else
     echo "valid=FALSE (pod restarted during run - discard and repeat)"
     echo "restarts_before:"; echo "$BEFORE"; echo "restarts_after:"; echo "$AFTER"

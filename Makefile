@@ -2,7 +2,7 @@
         kind-up kind-down build load build-gateway load-gateway ingress secrets linkerd \
         deploy-baseline deploy-secure \
         pull-model-baseline pull-model-secure pause-baseline pause-secure \
-        resume-baseline resume-secure deploy verify measure
+        resume-baseline resume-secure deploy verify measure measure-load
 
 IMAGE ?= llm-api:1.0.0
 GATEWAY_IMAGE ?= llm-gateway:1.0.0
@@ -101,6 +101,10 @@ verify:
 # make measure CONFIG=c1-rbac REP=1
 measure:
 	./scripts/measure-config.sh $(CONFIG) $(REP)
+
+# make measure-load CONFIG=c6-all REP=1 [PATHS=health]
+measure-load:
+	./scripts/measure-load.sh $(CONFIG) $(REP)
 
 clean:
 	find . -type d -name "__pycache__" -prune -exec rm -rf {} +
