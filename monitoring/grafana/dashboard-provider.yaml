@@ -1,0 +1,17 @@
+# Dashboard provider: loads every JSON file mounted from the grafana-dashboards ConfigMap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-provider
+  namespace: monitoring
+data:
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: thesis
+        folder: Thesis
+        type: file
+        disableDeletion: true
+        allowUiUpdates: false
+        options:
+          path: /var/lib/grafana/dashboards

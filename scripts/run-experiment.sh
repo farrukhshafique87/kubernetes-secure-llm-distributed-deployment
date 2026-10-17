@@ -7,7 +7,10 @@
 #   ./scripts/run-experiment.sh exp-01-baseline c0-baseline 1 llm-baseline
 #
 # Env overrides: BASE_URL (default http://localhost:8010), VUS (1),
-#   DURATION (5m), WARMUP (1m), COOLDOWN (120), SCRIPT_ARGS
+#   DURATION (5m), WARMUP (1m), COOLDOWN (120), SCRIPT_ARGS,
+#   MONITOR (0): 1 also pushes k6 metrics live to Prometheus for Grafana.
+#   Needs ./scripts/monitoring-forward.sh running. Use the same MONITOR value
+#   for every run of one experiment, because the push costs some client CPU.
 set -euo pipefail
 
 EXP="${1:?usage: run-experiment.sh <exp-dir> <config> <rep> <namespace> [k6-script]}"
@@ -21,11 +24,26 @@ VUS="${VUS:-1}"
 DURATION="${DURATION:-5m}"
 WARMUP="${WARMUP:-1m}"
 COOLDOWN="${COOLDOWN:-120}"
+MONITOR="${MONITOR:-0}"
 
 cd "$(dirname "$0")/.."
 OUT="results/${EXP}"
 RUN_ID="${EXP}-${CONFIG}-r${REP}"
 mkdir -p "$OUT"
+
+# Live output to Prometheus. The summary JSON stays the source of all results;
+# the live data is for watching runs and for the CPU throttling view.
+LIVE=()
+if [ "$MONITOR" = "1" ]; then
+  export K6_PROMETHEUS_RW_SERVER_URL="${K6_PROMETHEUS_RW_SERVER_URL:-http://localhost:9090/api/v1/write}"
+  export K6_PROMETHEUS_RW_TREND_STATS="${K6_PROMETHEUS_RW_TREND_STATS:-avg,p(95),p(99),max}"
+  if ! curl -sf "${K6_PROMETHEUS_RW_SERVER_URL%/api/v1/write}/-/ready" >/dev/null; then
+    echo "ERROR: MONITOR=1 but Prometheus is not reachable at ${K6_PROMETHEUS_RW_SERVER_URL%/api/v1/write}." >&2
+    echo "Start ./scripts/monitoring-forward.sh in a second terminal, or run with MONITOR=0." >&2
+    exit 1
+  fi
+  LIVE=(-o experimental-prometheus-rw)
+fi
 
 restarts() {
   kubectl -n "$NS" get pods \
@@ -43,7 +61,8 @@ echo "== smoke"
 k6 run --quiet -e BASE_URL="$BASE_URL" tests/k6/smoke.js
 
 echo "== warm-up ($WARMUP, discarded)"
-k6 run --quiet -e BASE_URL="$BASE_URL" -e VUS="$VUS" -e DURATION="$WARMUP" "$SCRIPT" >/dev/null || true
+k6 run --quiet -e BASE_URL="$BASE_URL" -e VUS="$VUS" -e DURATION="$WARMUP" \
+  "${LIVE[@]}" --tag testid="${RUN_ID}-warmup" "$SCRIPT" >/dev/null || true
 
 # Resource sampling (CPU/memory per pod) every 15 s if Metrics Server is installed
 SAMPLER_PID=""
@@ -72,7 +91,8 @@ echo "== measured run: $RUN_ID ($DURATION, $VUS VUs)"
 START="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 k6 run -e BASE_URL="$BASE_URL" -e VUS="$VUS" -e DURATION="$DURATION" -e RUN_ID="$RUN_ID" \
   --summary-trend-stats="avg,min,med,max,p(90),p(95),p(99)" \
-  --summary-export="$OUT/${CONFIG}-r${REP}.json" "$SCRIPT" || true
+  --summary-export="$OUT/${CONFIG}-r${REP}.json" \
+  "${LIVE[@]}" --tag testid="$RUN_ID" "$SCRIPT" || true
 END="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 [ -n "$SAMPLER_PID" ] && kill "$SAMPLER_PID" 2>/dev/null || true
 AFTER="$(restarts)"
@@ -82,6 +102,7 @@ AFTER="$(restarts)"
   echo "start=$START"
   echo "end=$END"
   echo "script=$SCRIPT vus=$VUS rate=${RATE:--} duration=$DURATION base_url=$BASE_URL"
+  echo "monitor=$MONITOR"
   if [ "$BEFORE" = "$AFTER" ]; then echo "valid=true (no pod restarts during run)"; else
     echo "valid=FALSE (pod restarted during run - discard and repeat)"
     echo "restarts_before:"; echo "$BEFORE"; echo "restarts_after:"; echo "$AFTER"

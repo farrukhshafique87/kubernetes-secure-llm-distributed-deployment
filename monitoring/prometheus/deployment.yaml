@@ -7,6 +7,13 @@ metadata:
     app: prometheus
 spec:
   replicas: 1
+  strategy:
+    # The data volume is ReadWriteOnce: the old pod must stop before the new one
+    # starts. (Same effect as Recreate, but applies cleanly to the existing Deployment.)
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: prometheus
@@ -15,15 +22,33 @@ spec:
       labels:
         app: prometheus
     spec:
+      serviceAccountName: prometheus
       containers:
         - name: prometheus
           image: prom/prometheus:v3.5.0
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
             - "--storage.tsdb.path=/prometheus"
+            # Keep measurement data across restarts and for the whole thesis period.
+            - "--storage.tsdb.retention.time=120d"
+            - "--storage.tsdb.retention.size=8GB"
+            # Accept k6 results pushed with -o experimental-prometheus-rw.
+            - "--web.enable-remote-write-receiver"
           ports:
             - name: http
               containerPort: 9090
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus
