@@ -1,0 +1,14 @@
+# Read access for the container metrics (cAdvisor) that the kubelet on each node
+# exposes. Prometheus reads them through the API server proxy, so it needs the
+# node list and the nodes/proxy subresource, nothing else.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-cadvisor
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes/proxy", "nodes/metrics"]
+    verbs: ["get"]

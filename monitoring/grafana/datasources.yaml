@@ -1,0 +1,20 @@
+# Prometheus data source, provisioned at Grafana start-up. With the dashboard
+# provider and the dashboard ConfigMap, Grafana needs no manual setup after a restart.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasources
+  namespace: monitoring
+data:
+  prometheus.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        uid: prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus.monitoring.svc.cluster.local:9090
+        isDefault: true
+        editable: false
+        jsonData:
+          timeInterval: 5s

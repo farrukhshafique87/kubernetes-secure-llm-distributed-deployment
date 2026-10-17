@@ -1,6 +1,6 @@
 # Project Roadmap
 
-Status as of 2026-10-15. "Done" means the evidence is in this repository.
+Status as of 2026-10-17. "Done" means the evidence is in this repository.
 
 | # | Milestone | Status | Evidence |
 | --- | --- | --- | --- |
@@ -8,7 +8,7 @@ Status as of 2026-10-15. "Done" means the evidence is in this repository.
 | 2 | FastAPI service, Docker image, unit tests | Done | `apps/llm-api`, `apps/llm-gateway`, tests run in CI |
 | 3 | Kubernetes deployment with Kustomize, Ollama | Done | `kubernetes/base`, `kubernetes/overlays` |
 | 4 | Ingress controller (Traefik) and TLS | Done | `kubernetes/components/ingress-tls`, `scripts/install-ingress.sh` |
-| 5 | Monitoring with Prometheus and Grafana | Partial | `monitoring/`: Prometheus scrapes the FastAPI service only; Grafana runs without provisioned data sources or dashboards |
+| 5 | Monitoring with Prometheus and Grafana | Done | `monitoring/`, [monitoring.md](monitoring.md): live k6 metrics, container CPU and throttling, provisioned dashboard, persistent volumes |
 | 6 | Security: RBAC, NetworkPolicies, Secrets, mTLS, API gateway | Done | `kubernetes/components/`, EXP-05 in `results/exp-05-security-verification/` |
 | 7 | Performance experiments with k6 on Kind | Done | EXP-01 and EXP-06 in `results/` |
 | 8 | GitHub Actions CI | Done | `.github/workflows/ci.yml`: lint, tests, manifest validation, image build |
