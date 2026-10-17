@@ -1,0 +1,83 @@
+# Environment record - 2026-10-17T05:25:26Z
+## Host
+Linux Farrukhs-PC 6.18.54.1-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Tue Oct  6 19:13:07 UTC 2026 x86_64 GNU/Linux
+CPU cores: 8
+               total        used        free      shared  buff/cache   available
+Mem:            10Gi       5.8Gi       117Mi        71Mi       5.1Gi       4.9Gi
+## Tool versions
+Docker version 29.6.2, build dfc4efb
+kind v0.23.0 go1.21.10 linux/amd64
+Client Version: v1.37.1
+Kustomize Version: v5.8.1
+v3.21.3+g1ad6e68
+k6 v2.0.0 (commit/8c3be52cc1, go1.26.3, linux/amd64)
+## Cluster
+kind-thesis-cluster
+NAME                           STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                         KERNEL-VERSION                      CONTAINER-RUNTIME
+thesis-cluster-control-plane   Ready    control-plane   11d   v1.31.0   172.18.0.4    <none>        Debian GNU/Linux 12 (bookworm)   6.18.54.1-microsoft-standard-WSL2   containerd://1.7.18
+thesis-cluster-worker          Ready    <none>          11d   v1.31.0   172.18.0.2    <none>        Debian GNU/Linux 12 (bookworm)   6.18.54.1-microsoft-standard-WSL2   containerd://1.7.18
+thesis-cluster-worker2         Ready    <none>          11d   v1.31.0   172.18.0.3    <none>        Debian GNU/Linux 12 (bookworm)   6.18.54.1-microsoft-standard-WSL2   containerd://1.7.18
+## Namespace llm-secure: workloads, images, resources
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES                                                                                  SELECTOR
+deployment.apps/fastapi   1/1     1            1           10d   fastapi      llm-api:1.0.0                                                                           app.kubernetes.io/instance=fastapi,app.kubernetes.io/name=llm-api
+deployment.apps/gateway   1/1     1            1           10d   gateway      llm-gateway:1.0.0                                                                       app.kubernetes.io/instance=gateway,app.kubernetes.io/name=llm-gateway
+deployment.apps/ollama    1/1     1            1           10d   ollama       ollama/ollama@sha256:292ee7945dfc3d5840a181f3ab86fedb1e66703e02c8af98b50f4da56b7e278c   app=ollama
+
+NAME                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)     AGE   SELECTOR
+service/fastapi-service   ClusterIP   10.96.212.197   <none>        8010/TCP    10d   app.kubernetes.io/name=llm-api
+service/gateway-service   ClusterIP   10.96.197.249   <none>        8080/TCP    10d   app.kubernetes.io/instance=gateway,app.kubernetes.io/name=llm-gateway
+service/ollama-service    ClusterIP   10.96.215.49    <none>        11434/TCP   10d   app=ollama
+
+NAME                               STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE   VOLUMEMODE
+persistentvolumeclaim/ollama-pvc   Bound    pvc-5030fbac-6956-44bb-b625-9653a2aba945   15Gi       RWO            standard       <unset>                 10d   Filesystem
+
+NAME                           READY   STATUS    RESTARTS   AGE     IP                NODE                     NOMINATED NODE   READINESS GATES
+pod/fastapi-55647b65c5-7sk4s   2/2     Running   0          4m22s   192.168.186.110   thesis-cluster-worker2   <none>           <none>
+pod/gateway-6465d76f5c-2bhpp   2/2     Running   0          4m22s   192.168.3.11      thesis-cluster-worker    <none>           <none>
+pod/ollama-6f7bfb7ffc-4gtcr    2/2     Running   0          4m22s   192.168.3.12      thesis-cluster-worker    <none>           <none>
+fastapi image=llm-api:1.0.0 resources={"limits":{"cpu":"1","memory":"1Gi"},"requests":{"cpu":"500m","memory":"512Mi"}}
+gateway image=llm-gateway:1.0.0 resources={"limits":{"cpu":"500m","memory":"256Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}
+ollama image=ollama/ollama@sha256:292ee7945dfc3d5840a181f3ab86fedb1e66703e02c8af98b50f4da56b7e278c resources={"limits":{"cpu":"2","memory":"4Gi"},"requests":{"cpu":"1","memory":"2Gi"}}
+## Model
+NAME            ID              SIZE      MODIFIED    
+qwen2.5:0.5b    a8b0c5157701    397 MB    10 days ago    
+ollama version is 0.35.1
+## Controlled inference parameters
+{"APP_NAME":"LLM API","LLM_KEEP_ALIVE":"24h","LLM_NUM_PREDICT":"64","LLM_SEED":"42","LLM_TEMPERATURE":"0.0","LOG_LEVEL":"INFO","OLLAMA_MAX_ATTEMPTS":"1","OLLAMA_MODEL":"qwen2.5:0.5b","OLLAMA_URL":"http://ollama-service:11434","REQUEST_TIMEOUT":"120","VERSION":"1.0.0"}
+## Network policies / CNI
+NAME                           POD-SELECTOR                         AGE
+allow-dns-egress               <none>                               9d
+api-allow-from-gateway         app.kubernetes.io/name=llm-api       9d
+api-allow-to-ollama            app.kubernetes.io/name=llm-api       9d
+default-deny-all               <none>                               9d
+gateway-allow-from-ingress     app.kubernetes.io/name=llm-gateway   9d
+gateway-allow-to-api           app.kubernetes.io/name=llm-gateway   9d
+mesh-allow-control-plane       <none>                               8d
+mesh-api-allow-proxy-traffic   app.kubernetes.io/name=llm-api       8d
+mesh-gateway-allow-to-api      app.kubernetes.io/name=llm-gateway   8d
+mesh-ollama-allow-from-api     app=ollama                           8d
+ollama-allow-from-api          app=ollama                           9d
+NAME                                       READY   STATUS    RESTARTS       AGE
+calico-kube-controllers-59856668b5-9pscf   1/1     Running   8 (47h ago)    11d
+calico-node-bgfl7                          1/1     Running   17 (47h ago)   11d
+calico-node-j26sv                          1/1     Running   13 (47h ago)   11d
+calico-node-tbjxv                          1/1     Running   13 (47h ago)   11d
+calico version: v3.32.2
+calico-node image=quay.io/calico/node:v3.32.2
+## Ingress controller / gateway / metrics server
+NAME   	NAMESPACE	REVISION	UPDATED                                 	STATUS  	CHART         	APP VERSION
+traefik	traefik  	2       	2026-10-07 00:57:22.777608501 +0200 CEST	deployed	traefik-41.6.1	v3.7.13    
+traefik image=docker.io/traefik:v3.7.13
+gateway image=llm-gateway:1.0.0
+NAME                 	NAMESPACE	REVISION	UPDATED                                 	STATUS  	CHART                          	APP VERSION 
+linkerd-control-plane	linkerd  	3       	2026-10-08 15:42:07.459604338 +0200 CEST	deployed	linkerd-control-plane-2026.10.1	edge-26.10.1
+linkerd-crds         	linkerd  	3       	2026-10-08 15:42:05.414447239 +0200 CEST	deployed	linkerd-crds-2026.10.1         	            
+linkerd-destination image=cr.l5d.io/linkerd/controller:edge-26.10.1
+linkerd-identity image=cr.l5d.io/linkerd/controller:edge-26.10.1
+linkerd-proxy-injector image=cr.l5d.io/linkerd/controller:edge-26.10.1
+metrics-server image=registry.k8s.io/metrics-server/metrics-server:v0.9.0
+NAME          CLASS     HOSTS       ADDRESS   PORTS     AGE
+llm-ingress   traefik   localhost             80, 443   4m27s
+## Git
+4c748c0b3ea63b16a3d5d0d12880923522408bbc
+?? results/exp-02-pilot/

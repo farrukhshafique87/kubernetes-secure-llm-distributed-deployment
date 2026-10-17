@@ -7,7 +7,7 @@
 #
 # Env overrides:
 #   PATHS      paths to measure: "health", "chat" or "health chat" (default)
-#   RATES      /health request rates in req/s      (default "50 100 150 200 300")
+#   RATES      /health request rates in req/s      (default "50 60 70 80 90 100")
 #   VUS_LIST   /chat virtual users                 (default "1 2 4")
 #   EXP        result folder under results/        (default exp-02-load)
 #
@@ -21,7 +21,7 @@ set -euo pipefail
 CONFIG="${1:?usage: measure-load.sh <config> <repetition>}"
 REP="${2:?usage: measure-load.sh <config> <repetition>}"
 PATHS="${PATHS:-health chat}"
-RATES="${RATES:-50 100 150 200 300}"
+RATES="${RATES:-50 60 70 80 90 100}"
 VUS_LIST="${VUS_LIST:-1 2 4}"
 export EXP="${EXP:-exp-02-load}"
 
