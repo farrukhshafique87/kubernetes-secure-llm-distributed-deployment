@@ -1,0 +1,6 @@
+run_id=exp-02-load-c0-baseline-chat-vus2-r2
+start=2026-10-17T19:27:42Z
+end=2026-10-17T19:30:46Z
+script=tests/k6/baseline.js vus=2 rate=- duration=3m base_url=http://localhost:8010
+monitor=1
+valid=true (no pod restarts during run)

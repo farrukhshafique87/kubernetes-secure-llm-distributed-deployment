@@ -9,7 +9,7 @@ API-key gateway for an LLM service (FastAPI + Ollama) on Kubernetes.
 Built as part of my M.Sc. thesis in Information Technology at Frankfurt University of
 Applied Sciences.
 
-## Key findings (Kind, EXP-06, 3 repetitions per configuration)
+## Key findings (Kind, EXP-06 and EXP-02, 3 repetitions per configuration)
 
 - With **all controls enabled**, the lightweight `/health` path became **+4.99 ms slower
   (+256.7 %)**: 6.94 ms instead of 1.95 ms on average.
@@ -18,6 +18,12 @@ Applied Sciences.
 - On the `/health` path at 50 requests/s, the full security stack used **+279 millicores CPU
   and +264 MiB memory** across the pods in the request path. The gateway alone added the
   most CPU (+134 m), Linkerd the most memory (+115 MiB).
+
+Under rising load (EXP-02, 50 to 200 requests/s) the per-request cost on `/health`
+stayed about constant (median +3 ms for the gateway, +5.5 ms for all controls), but the
+CPU-limited gateway left little headroom: from 70 requests/s single runs collapsed, while
+the baseline handled every run up to 200 requests/s.
+[`results/exp-02-load/load-summary.md`](results/exp-02-load/load-summary.md)
 
 Full tables: [`results/exp-06-final/overhead-summary.md`](results/exp-06-final/overhead-summary.md).
 Method: [`docs/research/experiment-methodology.md`](docs/research/experiment-methodology.md).
@@ -234,7 +240,7 @@ Evidence: [`results/exp-05-security-verification/`](results/exp-05-security-veri
 - Repeat the baseline-versus-secure comparison on a managed cloud cluster (EXP-07).
 - Add a `securityContext` to the Ollama deployment (non-root, capabilities dropped) and
   measure whether it changes anything.
-- Test how the overhead behaves with more load and more replicas (EXP-02, EXP-03).
+- Raise the gateway CPU limit and repeat the load levels (EXP-04), then test replicas (EXP-03).
 
 ## Tech stack
 

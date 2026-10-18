@@ -1,0 +1,6 @@
+run_id=exp-02-load-c0-baseline-health-rate70-r1
+start=2026-10-17T15:46:11Z
+end=2026-10-17T15:48:12Z
+script=tests/k6/health-path.js vus=1 rate=70 duration=2m base_url=http://localhost:8010
+monitor=1
+valid=true (no pod restarts during run)

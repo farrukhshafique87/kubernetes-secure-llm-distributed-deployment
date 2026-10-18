@@ -11,7 +11,17 @@ Reads the files written by measure-load.sh:
 A /health level is marked "saturated" when the system no longer keeps up with
 the requested rate: achieved rate below 95 % of the target, any dropped
 iterations, or more than 1 % failed requests. Saturated levels get no
-overhead value in the overhead table.
+overhead value in the overhead table. This is the rule stated before the runs
+(methodology 9.3).
+
+Post-hoc per-run view (methodology 9.6, added after the runs): every /health
+run is classified on its own as
+    collapse   achieved rate below 95 % of the target, more than 1 % failed
+               requests, or at least 1 % of the requests dropped
+    transient  some requests dropped, but less than 1 %
+    stable     nothing dropped
+and the overhead is also given from the median latency of the runs that did
+not collapse, which is not distorted by a few seconds of host stall.
 """
 
 import csv
@@ -92,6 +102,35 @@ def summarise(runs: list[dict], target: float | None) -> dict:
     return row
 
 
+def classify(run: dict, target: float) -> str:
+    data = run["data"]
+    achieved = stat(data, "http_reqs", "rate") or 0.0
+    count = stat(data, "http_reqs", "count") or 0.0
+    dropped = stat(data, "dropped_iterations", "count") or 0.0
+    failed = stat(data, "http_req_failed", "value") or 0.0
+    share = dropped / (count + dropped) if count + dropped else 0.0
+    if achieved < 0.95 * target or failed > 0.01 or share >= 0.01:
+        return "collapse"
+    return "transient" if dropped > 0 else "stable"
+
+
+def per_run(runs: list[dict], target: float) -> dict:
+    classes = [classify(r, target) for r in runs]
+    medians = [
+        stat(r["data"], "http_req_duration", "med")
+        for r, c in zip(runs, classes, strict=True)
+        if c != "collapse"
+    ]
+    medians = [m for m in medians if m is not None]
+    return {
+        "stable": classes.count("stable"),
+        "transient": classes.count("transient"),
+        "collapse": classes.count("collapse"),
+        "median": statistics.median(medians) if medians else None,
+        "n_median": len(medians),
+    }
+
+
 def table(header: list[str], rows: list[list[str]]) -> None:
     print("| " + " | ".join(header) + " |")
     print("| " + " | ".join("---" for _ in header) + " |")
@@ -111,6 +150,12 @@ def main() -> None:
     summary: dict[tuple[str, str, int], dict] = {}
     for key, rs in runs.items():
         summary[key] = summarise(rs, float(key[2]) if key[1] == "health" else None)
+
+    classes: dict[tuple[str, int], dict] = {
+        (k[0], k[2]): per_run(rs, float(k[2]))
+        for k, rs in runs.items()
+        if k[1] == "health"
+    }
 
     rates = sorted({k[2] for k in runs if k[1] == "health"})
     vus = sorted({k[2] for k in runs if k[1] == "chat"})
@@ -174,6 +219,59 @@ def main() -> None:
                 cells.append(f"{d:+.2f} ({verdict(b['avg_list'], s['avg_list'])})")
             rows.append(cells)
         table(["Rate req/s", "Baseline avg ms"] + [f"Δ {c} ms" for c in others], rows)
+
+        print("### /health runs per level (post-hoc, methodology 9.6)\n")
+        rows = []
+        for c in configs:
+            for r in rates:
+                k = classes.get((c, r))
+                if k:
+                    rows.append(
+                        [
+                            c,
+                            str(r),
+                            str(k["stable"]),
+                            str(k["transient"]),
+                            str(k["collapse"]),
+                            fmt(k["median"]),
+                        ]
+                    )
+        table(
+            [
+                "Config",
+                "Rate req/s",
+                "Stable",
+                "Transient",
+                "Collapse",
+                "Median ms (runs without collapse)",
+            ],
+            rows,
+        )
+
+        print("### /health overhead from medians, runs without collapse (post-hoc)\n")
+        print(
+            "A cell needs at least 2 such runs for the configuration "
+            "and the baseline.\n"
+        )
+        rows = []
+        for r in rates:
+            b = classes.get((BASE, r))
+            cells = [str(r), fmt(b["median"]) if b else "-"]
+            for c in others:
+                k = classes.get((c, r))
+                if not (b and k):
+                    cells.append("-")
+                elif k["n_median"] < 2 or b["n_median"] < 2:
+                    total = k["stable"] + k["transient"] + k["collapse"]
+                    cells.append(f"n/a ({k['collapse']} of {total} collapsed)")
+                else:
+                    cells.append(
+                        f"{k['median'] - b['median']:+.2f} (n={k['n_median']})"
+                    )
+            rows.append(cells)
+        table(
+            ["Rate req/s", "Baseline median ms"] + [f"Δ {c} ms" for c in others], rows
+        )
 
         print("### CPU per pod on the /health path (millicores, mean of run means)\n")
         print(
@@ -250,6 +348,12 @@ def main() -> None:
                     "tokens_per_s",
                 ]
                 + [f"cpu_{p}_m" for p in DETAIL_PODS]
+                + [
+                    "runs_stable",
+                    "runs_transient",
+                    "runs_collapse",
+                    "median_ms_no_collapse",
+                ]
             )
             for (c, p, lvl), s in sorted(summary.items()):
                 w.writerow(
@@ -269,6 +373,16 @@ def main() -> None:
                         s["tps"],
                     ]
                     + [s["pod_cpu"][q] for q in DETAIL_PODS]
+                    + (
+                        [
+                            classes[(c, lvl)]["stable"],
+                            classes[(c, lvl)]["transient"],
+                            classes[(c, lvl)]["collapse"],
+                            classes[(c, lvl)]["median"],
+                        ]
+                        if p == "health"
+                        else ["", "", "", ""]
+                    )
                 )
 
 

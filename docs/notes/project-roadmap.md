@@ -1,6 +1,6 @@
 # Project Roadmap
 
-Status as of 2026-10-17. "Done" means the evidence is in this repository.
+Status as of 2026-10-18. "Done" means the evidence is in this repository.
 
 | # | Milestone | Status | Evidence |
 | --- | --- | --- | --- |
@@ -12,7 +12,7 @@ Status as of 2026-10-17. "Done" means the evidence is in this repository.
 | 6 | Security: RBAC, NetworkPolicies, Secrets, mTLS, API gateway | Done | `kubernetes/components/`, EXP-05 in `results/exp-05-security-verification/` |
 | 7 | Performance experiments with k6 on Kind | Done | EXP-01 and EXP-06 in `results/` |
 | 8 | GitHub Actions CI | Done | `.github/workflows/ci.yml`: lint, tests, manifest validation, image build |
-| 9 | Sensitivity experiments: load, replicas, resource limits (EXP-02 to EXP-04) | Planned | `docs/research/research-traceability-matrix.md` |
+| 9 | Sensitivity experiments: load, replicas, resource limits (EXP-02 to EXP-04) | In progress | EXP-02 done: `results/exp-02-load/`, methodology §9.6; EXP-03 and EXP-04 planned |
 | 10 | Managed cloud deployment and comparison with Kind (EXP-07) | Planned | `docs/research/research-traceability-matrix.md` |
 | 11 | Thesis analysis and write-up | In progress | thesis document (not in this repository) |
 
