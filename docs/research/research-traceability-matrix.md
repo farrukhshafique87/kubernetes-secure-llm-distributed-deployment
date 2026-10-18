@@ -66,9 +66,9 @@ Workload intensity (EXP-02), replica count (EXP-03) and resource limits (EXP-04)
 
 | RQ  | Exp    | Role            | Variable              | Metrics     | Status    |
 | --- | ------ | --------------- | --------------------- | ----------- | --------- |
-| RQ1 | EXP-00 | Prerequisite    | Deployment health     | A           | Partial   |
+| RQ1 | EXP-00 | Prerequisite    | Deployment health     | A           | Completed |
 | RQ1 | EXP-01 | Reference       | 1 VU, unsecured       | L T E C M S | Completed |
-| RQ1 | EXP-02 | Operating point | VUs / request rate    | L T E C M   | Planned   |
+| RQ1 | EXP-02 | Operating point | VUs / request rate    | L T E C M   | Completed |
 | RQ1 | EXP-03 | Sensitivity     | Replica count         | L T E C M   | Planned   |
 | RQ1 | EXP-04 | Sensitivity     | CPU / memory limits   | L T E C M   | Planned   |
 | RQ1 | EXP-05 | Verification    | Controls work         | A B         | Completed |
@@ -77,7 +77,7 @@ Workload intensity (EXP-02), replica count (EXP-03) and resource limits (EXP-04)
 | RQ3 | EXP-05 | Verification    | Per-control checks    | A B         | Completed |
 | RQ3 | EXP-06 | Primary         | One control at a time | L T E C M S | Kind done |
 
-EXP-00 is *Partial* until CPU and memory collection (Metrics Server or cAdvisor) is verified, because Prometheus currently scrapes the FastAPI service only.
+CPU, CPU throttling and memory per container are collected through cAdvisor in Prometheus (`docs/notes/monitoring.md`).
 
 ### 3.3 Evidence per experiment
 
@@ -428,9 +428,9 @@ Changes to hardware, model version, workload, resource allocation, or deployment
 | ------------------------------ | -------------------- | ----------------------------- |
 | EXP-00 Deployment & Monitoring | Completed / baseline | Final verification            |
 | EXP-01 Baseline Load           | Completed            | -                             |
-| EXP-02 Load & Stress           | Planned              | Run sweep (methodology §9)    |
+| EXP-02 Load & Stress           | Completed (Kind)     | Results in methodology §9.6   |
 | EXP-03 Horizontal Scaling      | Planned              | Configure and execute         |
-| EXP-04 Resource Allocation     | Planned              | Define resource profiles      |
+| EXP-04 Resource Allocation     | Planned              | Gateway CPU 500 m vs 1000 m   |
 | EXP-05 Security Verification   | Completed            | -                             |
 | EXP-06 Secure Performance      | Kind done            | Repeat on cloud (EXP-07)      |
 | EXP-07 Local vs Cloud          | Planned              | Needs managed cloud access    |

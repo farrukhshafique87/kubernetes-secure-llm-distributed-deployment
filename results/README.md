@@ -8,6 +8,7 @@ The overhead tables come from [`exp-06-final/overhead-summary.md`](exp-06-final/
 | Folder | Contents | Status |
 | --- | --- | --- |
 | `exp-01-baseline` | EXP-01: baseline (c0), 3 runs on `/chat` and 3 on `/health` | Final |
+| `exp-02-load` | EXP-02: `/health` on c0, c5, c6 at 50-100 req/s (c0 also 150, 200) and `/chat` on c0, c6 at 1, 2, 4 VUs, 3 repetitions, `MONITOR=1` | Final |
 | `exp-02-pilot` | EXP-02 pilot: `/health` on c0, c5 and c6 at 50 to 200 req/s, 1 run each, to choose the sweep levels | Pilot, not used for conclusions |
 | `exp-05-security-verification` | EXP-05: evidence that each control works (RBAC, NetworkPolicy, mTLS, all controls) | Final |
 | `exp-06-final` | EXP-06: 7 configurations x 3 repetitions, interleaved. Source of the overhead tables | Final |

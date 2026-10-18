@@ -163,6 +163,14 @@ measures queueing rather than the cost of a control.
   counters in Prometheus (`docs/notes/monitoring.md`), not from `kubectl top`.
 * The saturation point depends on the CPU limits chosen in the manifests. EXP-04
   can test this directly by raising the gateway limit.
+* The host was not equally fast in all repetitions. Repetition 1 was slower for
+  every configuration (c0 median at 50 to 100 req/s: 2.07 to 2.25 ms against
+  1.88 to 1.93 ms in repetition 3), and four of the five collapsed runs fall into repetition 1.
+  Rotating the configuration order spreads this effect over the configurations
+  but does not remove it.
+* Short stalls of the host (about 1 to 4 s without responses) appear in single
+  runs of every configuration, including the baseline. With 3 runs per level,
+  the share of collapsed runs is an indication, not a probability estimate.
 
 ### 9.5 Pilot (17 Oct 2026, not used for conclusions)
 
@@ -185,3 +193,58 @@ Values are the average latency, or the achieved rate for saturated levels.
 * A separate check with live monitoring (c5-gateway, 100 req/s) measured the
   gateway container as CPU-throttled in 99.7 % of scheduler periods (maximum of
   1-minute windows).
+
+### 9.6 Results (17 Oct 2026, 3 repetitions, `MONITOR=1`)
+
+78 runs, all valid (no pod restarts). Data: `results/exp-02-load/`; full tables:
+`results/exp-02-load/load-summary.md` (`scripts/load_table.py`).
+
+**`/chat` (H2.1).** Throughput levels off from 2 VUs at 0.42 to 0.43 (c0) and 0.45 to
+0.46 (c6) req/s; above that, latency grows with the queue (about 8 s at 4 VUs). c0 and c6
+overlap at every level (1 VU: 2.60 s, runs 2.00 to 3.67 s, against 2.35 s, runs
+2.13 to 2.71 s). The Ollama container reached 100 % CPU throttling at its 2-CPU
+limit in both configurations, so the throughput limit comes from the CPU limit
+of Ollama as well as from serving one request at a time. H2.1 is supported, with
+this addition to its explanation.
+
+**`/health`, rule of §9.3 (primary, stated before the runs).** c0 counts as
+saturated only at 150 req/s, c5 at 50, 70 and 100 req/s, c6 at every level from
+60 req/s. Most of these levels are marked because of a few dropped requests in
+one run (see below).
+
+**`/health`, per run (post-hoc).** Added after the runs because single host
+stalls made the §9.3 rule mark whole levels. Each run is classified as
+*collapse* (achieved rate below 95 % of the target, more than 1 % failed, or at
+least 1 % of requests dropped), *transient* (some, but under 1 %, dropped) or
+*stable* (nothing dropped). The overhead is also given from the median latency
+of the runs without collapse.
+
+| Config      | Collapsed runs (of 3) per level                 | Transient runs |
+| ----------- | ----------------------------------------------- | -------------- |
+| c0-baseline | none at 50 to 200 req/s                         | 1 (150 req/s)  |
+| c5-gateway  | 70: 1, 100: 1                                   | 2              |
+| c6-all      | 90: 1, 100: 2                                   | 4              |
+
+| Rate req/s | c0 median ms | Δ c5-gateway ms | Δ c6-all ms          |
+| ---------- | ------------ | --------------- | -------------------- |
+| 50         | 1.98         | +3.38           | +5.62                |
+| 60         | 2.08         | +2.81           | +5.45                |
+| 70         | 1.99         | +2.66 (2 runs)  | +6.92                |
+| 80         | 2.01         | +3.27           | +5.87                |
+| 90         | 2.02         | +3.05           | +5.33 (2 runs)       |
+| 100        | 1.96         | +3.00 (2 runs)  | n/a (2 of 3 collapsed) |
+
+**H2.2.** The first part is supported: the median overhead stays at about +3 ms
+(gateway) and +5.5 ms (all controls) from 50 to 90 req/s. The predicted
+saturation point is not: the gateway configurations collapse in single runs from
+70 req/s, not from 150 to 200 req/s, while the baseline completes every run up
+to 200 req/s. During the sweep the `gateway` container reached 100 % CPU
+throttling (maximum of 1-minute windows) in c5 and c6; `fastapi` stayed below
+2 % and `linkerd-proxy` below 18 %.
+
+**Interpretation (to be tested).** The gateway runs close to its 500 m CPU limit
+at 70 to 100 req/s (c5: 272 to 384 m on average). A short host stall that the
+baseline absorbs then builds a queue that the throttled gateway cannot drain, so
+the cost of the security path shows as a higher chance of collapse rather than
+as a fixed capacity limit. EXP-04 tests this by raising only the gateway CPU
+limit; if the interpretation holds, the collapses at 70 to 100 req/s disappear.
