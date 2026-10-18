@@ -25,6 +25,10 @@ CPU-limited gateway left little headroom: from 70 requests/s single runs collaps
 the baseline handled every run up to 200 requests/s.
 [`results/exp-02-load/load-summary.md`](results/exp-02-load/load-summary.md)
 
+| Overhead per request (median) | Collapsed runs per level |
+| --- | --- |
+| ![Median /health latency over the baseline per request rate](results/exp-02-load/fig-overhead-median.png) | ![Number of collapsed runs per request rate and configuration](results/exp-02-load/fig-collapsed-runs.png) |
+
 Full tables: [`results/exp-06-final/overhead-summary.md`](results/exp-06-final/overhead-summary.md).
 Method: [`docs/research/experiment-methodology.md`](docs/research/experiment-methodology.md).
 

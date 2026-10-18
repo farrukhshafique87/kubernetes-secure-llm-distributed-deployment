@@ -197,7 +197,8 @@ Values are the average latency, or the achieved rate for saturated levels.
 ### 9.6 Results (17 Oct 2026, 3 repetitions, `MONITOR=1`)
 
 78 runs, all valid (no pod restarts). Data: `results/exp-02-load/`; full tables:
-`results/exp-02-load/load-summary.md` (`scripts/load_table.py`).
+`results/exp-02-load/load-summary.md` (`scripts/load_table.py`); figures:
+`fig-overhead-median.png` and `fig-collapsed-runs.png` (`scripts/plot_load.py`).
 
 **`/chat` (H2.1).** Throughput levels off from 2 VUs at 0.42 to 0.43 (c0) and 0.45 to
 0.46 (c6) req/s; above that, latency grows with the queue (about 8 s at 4 VUs). c0 and c6
