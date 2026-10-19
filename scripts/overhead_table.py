@@ -31,6 +31,7 @@ PATH_PODS = {
     ],
     "c4-tls": ["fastapi", "traefik"],
     "c5-gateway": ["fastapi", "gateway"],
+    "c5-gateway-cpu1000": ["fastapi", "gateway"],
     "c6-all": [
         "fastapi",
         "gateway",
