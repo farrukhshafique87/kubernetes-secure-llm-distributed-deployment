@@ -46,6 +46,26 @@ Grafana: <http://localhost:3000>, folder "Thesis", dashboard
 "Load runs: k6 and containers". Select runs with the "Run" variable
 (`<exp>-<config>-r<rep>`; warm-ups end in `-warmup`).
 
+## After a restart
+
+After Docker Desktop, WSL or the monitoring pods restart, Prometheus and
+Grafana come back with their data (persistent volumes). Only the port-forwards
+break: an old forward can keep the port busy while pointing at a pod that no
+longer exists. Start `./scripts/monitoring-forward.sh` again; it
+
+- stops an earlier copy of itself and any leftover `kubectl port-forward` to
+  the `monitoring` namespace,
+- waits until both Deployments are ready,
+- checks Prometheus (`/-/ready`) and Grafana (`/api/health`) through the
+  forward every 10 s and restarts a forward after 3 failed checks in a row.
+
+Check from another terminal:
+
+```bash
+curl -s localhost:9090/-/ready; echo                                   # Prometheus Server is Ready.
+curl -s -o /dev/null -w "grafana %{http_code}\n" localhost:3000/api/health   # grafana 200
+```
+
 ## Rules for experiments
 
 - `MONITOR=1` makes k6 push its metrics, which costs some CPU on the host that
