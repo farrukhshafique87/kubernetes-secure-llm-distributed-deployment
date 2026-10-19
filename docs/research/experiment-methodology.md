@@ -92,6 +92,10 @@ overhead. Kind and cloud results are reported separately (RQ2).
 | c4-tls      | kind-c4-tls     | llm-c4-tls     | https://localhost:8443 | no  |
 | c5-gateway  | kind-c5-gateway | llm-c5-gateway | http://localhost:8010  | yes |
 | c6-all      | kind-secure     | llm-secure     | https://localhost:8443 | yes |
+| c5-gateway-cpu1000 | kind-c5-gateway-cpu1000 | llm-c5-gateway | http://localhost:8010 | yes |
+
+c5-gateway-cpu1000 exists only for EXP-04 (§10): it is c5-gateway with the gateway
+CPU limit at 1000 m instead of 500 m and shares its namespace.
 
 C3 uses Linkerd. Only hops between meshed workloads use mTLS; Traefik is not
 meshed, so the hop from the ingress to the gateway is plain HTTP.
@@ -249,3 +253,57 @@ baseline absorbs then builds a queue that the throttled gateway cannot drain, so
 the cost of the security path shows as a higher chance of collapse rather than
 as a fixed capacity limit. EXP-04 tests this by raising only the gateway CPU
 limit; if the interpretation holds, the collapses at 70 to 100 req/s disappear.
+
+## 10. EXP-04 gateway CPU limit
+
+EXP-02 left one explanation open (§9.6): the gateway configurations collapse in
+single runs from 70 req/s because the gateway runs close to its 500 m CPU limit
+and cannot drain the queue after a short host stall. EXP-04 tests this by
+changing only that limit. Memory is not varied: the gateway used about 48 Mi of
+its 256 Mi limit in EXP-06.
+
+### 10.1 Design
+
+| Item          | Value                                                        |
+| ------------- | ------------------------------------------------------------ |
+| Configs       | c0-baseline, c5-gateway (500 m), c5-gateway-cpu1000 (1000 m) |
+| Path          | `/health` only                                               |
+| Levels        | 50 to 100 req/s in steps of 10; c0 and c5-gateway-cpu1000 also 120 and 150 |
+| Run settings  | as EXP-02 (§9.1): 2 min, 30 s warm-up, 60 s cool-down        |
+| Repetitions   | 3, interleaved over the three configurations                 |
+| Monitoring    | `MONITOR=1` for every run                                    |
+
+c5-gateway is measured again in the same session instead of reusing the EXP-02
+runs, because the host was not equally fast between sessions (§9.4). c0 is
+measured again for the same reason; it is the reference for the overhead. The
+limit is raised to 1000 m and not further: the gateway runs as one uvicorn
+process, which uses at most about one CPU core. The CPU request stays at 100 m.
+
+Overlay: `kubernetes/overlays/kind-c5-gateway-cpu1000` (renders the same objects
+as `kind-c5-gateway` except the CPU limit). Script: `scripts/measure-load.sh`
+with `EXP=exp-04-gateway-cpu`; tables: `scripts/load_table.py`.
+Results: `results/exp-04-gateway-cpu/`.
+
+### 10.2 Hypotheses (stated before the runs)
+
+* **H4.1 (collapse).** With 1000 m, the throttling of the `gateway` container
+  stays below 50 % (maximum of the 1-minute windows) and no run collapses at 50
+  to 100 req/s.
+* **H4.2 (overhead).** Where the gateway is not throttled, the limit does not
+  change the cost of a request: at 50 req/s the median overhead of both c5
+  versions differs by less than 0.5 ms. Where the 500 m version is throttled,
+  the 1000 m version has an equal or lower median overhead.
+
+### 10.3 How the result is read
+
+Runs are classified as in §9.6 (collapse, transient, stable), and throttling is
+taken from cAdvisor as in §9.4.
+
+* H4.1 holds if c5-gateway-cpu1000 has no collapsed run at 50 to 100 req/s and
+  its gateway throttling stays below 50 % at those levels.
+* If the 500 m version also has no collapsed run in this session, the collapse
+  part cannot be decided; this is reported as such, and only throttling and
+  median overhead are compared.
+* With 3 runs per level a collapse is a rare event, so "no collapse" is weak
+  evidence on its own. The throttling values are therefore part of the result,
+  not only the collapse counts.

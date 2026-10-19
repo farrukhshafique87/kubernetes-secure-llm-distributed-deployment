@@ -35,7 +35,7 @@ from pathlib import Path
 from overhead_table import PATH_PODS, pod_cpu_mem, stat, verdict
 
 RUN_FILE = re.compile(
-    r"^(?P<config>c\d-[a-z]+)-(?P<path>health|chat)-(?P<kind>rate|vus)"
+    r"^(?P<config>c\d-[a-z0-9-]+?)-(?P<path>health|chat)-(?P<kind>rate|vus)"
     r"(?P<level>\d+)-r(?P<rep>\d+)\.json$"
 )
 BASE = "c0-baseline"

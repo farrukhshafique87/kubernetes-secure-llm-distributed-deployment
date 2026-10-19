@@ -14,6 +14,8 @@ config_vars() {
     c4-tls)      OVERLAY=kind-c4-tls;     NS=llm-c4-tls;     URL=https://localhost:8443; AUTH=no  ;;
     c5-gateway)  OVERLAY=kind-c5-gateway; NS=llm-c5-gateway; URL=http://localhost:8010;  AUTH=yes ;;
     c6-all)      OVERLAY=kind-secure;     NS=llm-secure;     URL=https://localhost:8443; AUTH=yes ;;
+    # EXP-04: c5-gateway with the gateway CPU limit at 1000 m (same namespace).
+    c5-gateway-cpu1000) OVERLAY=kind-c5-gateway-cpu1000; NS=llm-c5-gateway; URL=http://localhost:8010; AUTH=yes ;;
     *) echo "unknown config: $1" >&2; return 1 ;;
   esac
 }
