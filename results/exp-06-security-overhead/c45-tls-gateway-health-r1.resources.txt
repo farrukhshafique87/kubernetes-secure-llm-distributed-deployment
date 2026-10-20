@@ -1,8 +1,0 @@
-03:55:09 fastapi-96b9b64cb-b7k5h 71m 55Mi ;gateway-fd7d9d8c8-t6qxk 125m 51Mi ;ollama-54c996fff8-qg7h5 1m 655Mi ;
-03:55:24 fastapi-96b9b64cb-b7k5h 70m 55Mi ;gateway-fd7d9d8c8-t6qxk 126m 51Mi ;ollama-54c996fff8-qg7h5 1m 655Mi ;
-03:55:40 fastapi-96b9b64cb-b7k5h 70m 55Mi ;gateway-fd7d9d8c8-t6qxk 123m 51Mi ;ollama-54c996fff8-qg7h5 1m 655Mi ;
-03:55:55 fastapi-96b9b64cb-b7k5h 70m 55Mi ;gateway-fd7d9d8c8-t6qxk 125m 51Mi ;ollama-54c996fff8-qg7h5 1m 654Mi ;
-03:56:10 fastapi-96b9b64cb-b7k5h 70m 55Mi ;gateway-fd7d9d8c8-t6qxk 124m 51Mi ;ollama-54c996fff8-qg7h5 1m 654Mi ;
-03:56:25 fastapi-96b9b64cb-b7k5h 74m 55Mi ;gateway-fd7d9d8c8-t6qxk 130m 51Mi ;ollama-54c996fff8-qg7h5 1m 654Mi ;
-03:56:40 fastapi-96b9b64cb-b7k5h 74m 55Mi ;gateway-fd7d9d8c8-t6qxk 127m 51Mi ;ollama-54c996fff8-qg7h5 1m 654Mi ;
-03:56:55 fastapi-96b9b64cb-b7k5h 71m 55Mi ;gateway-fd7d9d8c8-t6qxk 124m 51Mi ;ollama-54c996fff8-qg7h5 1m 654Mi ;

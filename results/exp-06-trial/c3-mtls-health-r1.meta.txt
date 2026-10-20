@@ -1,5 +1,0 @@
-run_id=exp-06-trial-c3-mtls-health-r1
-start=2026-10-08T22:12:31Z
-end=2026-10-08T22:14:31Z
-script=tests/k6/health-path.js vus=1 duration=2m base_url=http://localhost:8010
-valid=true (no pod restarts during run)

@@ -1,40 +1,45 @@
 .PHONY: help format lint validate validate-kube validate-yaml test clean \
-        kind-up kind-down build load build-gateway load-gateway ingress secrets linkerd \
-        deploy-baseline deploy-secure \
-        pull-model-baseline pull-model-secure pause-baseline pause-secure \
-        resume-baseline resume-secure deploy verify measure measure-load
+        kind-up kind-down metrics-server monitoring \
+        build load build-gateway load-gateway secrets ingress linkerd \
+        deploy pull-model pause resume verify measure measure-load
+
+SHELL := /bin/bash
 
 IMAGE ?= llm-api:1.0.0
 GATEWAY_IMAGE ?= llm-gateway:1.0.0
 CLUSTER ?= thesis-cluster
+# Configuration name as in scripts/lib/configs.sh (c0-baseline ... c6-all).
+CONFIG ?= c0-baseline
+# Sets OVERLAY and NS for $(CONFIG).
+CFG = . scripts/lib/configs.sh && config_vars $(CONFIG)
 
 help:
-	@echo "Code quality:   format lint test validate"
-	@echo "Cluster:        kind-up kind-down"
-	@echo "Image:          build load build-gateway load-gateway"
-	@echo "Secure setup:   secrets ingress (once), then deploy-secure"
-	@echo "Deploy:         deploy-baseline deploy-secure"
-	@echo "Model:          pull-model-baseline pull-model-secure"
-	@echo "Run one env at a time: pause-<env> / resume-<env>"
+	@echo "Code quality:  format lint test validate"
+	@echo "Cluster:       kind-up kind-down metrics-server monitoring"
+	@echo "Images:        build load build-gateway load-gateway"
+	@echo "Secure setup:  secrets ingress linkerd (once)"
+	@echo "Environment:   deploy pull-model pause resume verify  [CONFIG=c0-baseline]"
+	@echo "Measurement:   measure measure-load  CONFIG=<config> REP=<n>"
+	@echo "Configs: c0-baseline c1-rbac c2-netpol c3-mtls c4-tls c5-gateway c6-all"
+	@echo "Only one environment may run at a time: make pause CONFIG=<other> first."
 
 format:
-	ruff format apps
-	ruff check --fix apps
+	ruff format .
+	ruff check --fix .
 
 lint:
-	ruff check apps
+	ruff check .
 
 validate-yaml:
 	yamllint .
 
 validate-kube:
-	kubectl kustomize kubernetes/overlays/kind-baseline | kubeconform -strict -summary
-	kubectl kustomize kubernetes/overlays/kind-secure | kubeconform -strict -summary
+	for overlay in kubernetes/overlays/*/; do \
+	  echo "== $$overlay"; \
+	  kubectl kustomize "$$overlay" | kubeconform -strict -summary || exit 1; \
+	done
 
-validate:
-	make lint
-	make validate-yaml
-	make validate-kube
+validate: lint validate-yaml validate-kube
 
 test:
 	cd apps/llm-api && pytest
@@ -45,6 +50,12 @@ kind-up:
 
 kind-down:
 	kind delete cluster --name $(CLUSTER)
+
+metrics-server:
+	./scripts/install-metrics-server.sh
+
+monitoring:
+	./scripts/install-monitoring.sh
 
 build:
 	docker build -t $(IMAGE) apps/llm-api
@@ -58,45 +69,29 @@ build-gateway:
 load-gateway:
 	kind load docker-image $(GATEWAY_IMAGE) --name $(CLUSTER)
 
-ingress:
-	./scripts/install-ingress.sh
-
 secrets:
 	./scripts/gen-secrets.sh
+
+ingress:
+	./scripts/install-ingress.sh
 
 linkerd:
 	./scripts/install-linkerd.sh
 
-deploy-baseline:
-	kubectl apply -k kubernetes/overlays/kind-baseline
-
-deploy-secure:
-	kubectl apply -k kubernetes/overlays/kind-secure
-
-pull-model-baseline:
-	./scripts/pull-model.sh llm-baseline
-
-pull-model-secure:
-	./scripts/pull-model.sh llm-secure kubernetes/overlays/kind-secure
-
-pause-baseline:
-	./scripts/pause-env.sh llm-baseline
-
-pause-secure:
-	./scripts/pause-env.sh llm-secure
-
-resume-baseline:
-	./scripts/resume-env.sh kubernetes/overlays/kind-baseline llm-baseline
-
-resume-secure:
-	./scripts/resume-env.sh kubernetes/overlays/kind-secure llm-secure
-
-# Generic helpers: make deploy ENV=kind-c1-rbac | make verify NS=llm-c1-rbac
 deploy:
-	kubectl apply -k kubernetes/overlays/$(ENV)
+	$(CFG) && kubectl apply -k "kubernetes/overlays/$$OVERLAY"
+
+pull-model:
+	$(CFG) && ./scripts/pull-model.sh "$$NS" "kubernetes/overlays/$$OVERLAY"
+
+pause:
+	$(CFG) && ./scripts/pause-env.sh "$$NS"
+
+resume:
+	$(CFG) && ./scripts/resume-env.sh "kubernetes/overlays/$$OVERLAY" "$$NS"
 
 verify:
-	./scripts/verify-controls.sh $(NS)
+	$(CFG) && ./scripts/verify-controls.sh "$$NS"
 
 # make measure CONFIG=c1-rbac REP=1
 measure:

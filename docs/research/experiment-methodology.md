@@ -38,7 +38,8 @@ the environment record (`scripts/record-environment.sh`).
 
 ## 4. Run protocol
 
-1. Pause the other environment (`make pause-baseline` / `make pause-secure`).
+1. Pause the other environments (`make pause CONFIG=<config>`; the measurement
+   scripts do this themselves).
 2. Run `scripts/record-environment.sh results/<exp>/ <namespace>`.
 3. Run `tests/k6/smoke.js`. Abort if it fails.
 4. Warm-up: 1 minute of the same load, discarded.
