@@ -254,6 +254,18 @@ the cost of the security path shows as a higher chance of collapse rather than
 as a fixed capacity limit. EXP-04 tests this by raising only the gateway CPU
 limit; if the interpretation holds, the collapses at 70 to 100 req/s disappear.
 
+**Throttling per run (added 20 Oct 2026).** `scripts/throttle_table.py` reads
+the throttling of each container back from Prometheus for the measured window of
+each run (`results/exp-02-load/throttling.csv`). All 5 collapsed runs are runs in
+which the `gateway` container was throttled heavily: maximum of the 1-minute
+windows 61 to 100 %, mean over the run 35 to 100 %. In the 31 runs without
+collapse the maximum was at most 34 % and the mean at most 28 %. Within the
+measured windows `fastapi` stayed at or below 0.6 % and `linkerd-proxy` at or
+below 0.1 %; the 18 % for `linkerd-proxy` given above was read from the
+dashboard over the whole sweep, including warm-up and cool-down. The data show
+that collapse and gateway throttling occur in the same runs; they cannot show
+which of the two comes first (see §10.4).
+
 ## 10. EXP-04 gateway CPU limit
 
 EXP-02 left one explanation open (§9.6): the gateway configurations collapse in
@@ -307,3 +319,57 @@ taken from cAdvisor as in §9.4.
 * With 3 runs per level a collapse is a rare event, so "no collapse" is weak
   evidence on its own. The throttling values are therefore part of the result,
   not only the collapse counts.
+
+### 10.4 Results (20 Oct 2026, 3 repetitions, `MONITOR=1`)
+
+66 runs, all valid (no pod restarts). Data: `results/exp-04-gateway-cpu/`;
+tables: `load-summary.md` (`scripts/load_table.py`) and `throttling-summary.md`
+(`scripts/throttle_table.py`). The terminal closed during repetition 2 of c0;
+that block was deleted and run again completely, so every repetition of every
+configuration is one uninterrupted block. Pilot: `results/exp-04-pilot/`
+(1 run per level, not used for conclusions).
+
+| Rate req/s | c0 median ms | Δ c5 500 m ms | Δ c5 1000 m ms | Gateway throttling max, 500 m | 1000 m |
+| ---------- | ------------ | ------------- | -------------- | ----------------------------- | ------ |
+| 50         | 2.08         | +2.20         | +2.05          | 0.3 %                         | 0.0 %  |
+| 60         | 2.18         | +2.09         | +3.16          | 0.2 %                         | 0.2 %  |
+| 70         | 2.45         | +1.85         | +2.56          | 1.4 %                         | 0.9 %  |
+| 80         | 1.94         | +2.34         | +2.28          | 6.4 %                         | 0.2 %  |
+| 90         | 1.93         | +2.39         | +2.26          | 18.6 %                        | 0.0 %  |
+| 100        | 1.93         | +2.58         | +2.35          | 18.1 %                        | 0.0 %  |
+| 120        | 1.86         | -             | +3.50          | -                             | 0.6 %  |
+| 150        | 1.86         | -             | +3.21 (2 runs) | -                             | 1.3 %  |
+
+Δ: median of the runs without collapse minus the c0 median (n = 3 unless
+stated). Throttling: highest 1-minute value in any run of the level.
+
+Collapsed runs at 50 to 100 req/s: none for c5 at 500 m (1 transient run at
+100 req/s), none for c5 at 1000 m (1 transient run at 70 req/s). At 1000 m, 1 of
+3 runs collapsed at 150 req/s. c0 had no collapse and 1 transient run (70 req/s).
+
+**H4.1.** The throttling part is supported: with 1000 m the gateway was throttled
+for at most 1.3 % of a 1-minute window up to 150 req/s. The collapse part cannot
+be decided (§10.3): the 500 m version did not collapse in this session either;
+its gateway was throttled for at most 18.6 %, against up to 100 % in EXP-02.
+
+**H4.2.** Supported. At 50 req/s the median overhead of both versions differs by
+0.15 ms. At 90 and 100 req/s, the levels at which the 500 m version was
+throttled (mean 5.3 and 7.4 %), the 1000 m version is 0.13 and 0.23 ms lower. Not
+predicted: at 60 and 70 req/s, where neither version was throttled, the 1000 m
+version is 0.7 to 1.1 ms higher. Each of these levels contains one slow run
+(average 9.50 and 20.97 ms), so the difference is not explained by the CPU limit.
+
+**Together with EXP-02.** Collapse occurred only in runs in which the gateway was
+heavily throttled (§9.6). Raising the limit removed the throttling at every
+level and did not change the median cost per request. In this session the
+500 m gateway was not pushed to its limit and no run collapsed, so the
+experiment does not reproduce the EXP-02 collapses and cannot show whether
+throttling causes the collapse or follows from the queue after a host stall.
+What it does show: the per-request cost of the gateway does not depend on its
+CPU limit, while the headroom does; with 500 m the gateway reached its limit
+during bursts from about 80 req/s in this session.
+
+**Limit at 150 req/s.** With 1000 m, one run collapsed at 150 req/s although the
+gateway was throttled for only 0.9 % (it used 562 m on average). This collapse
+is not caused by the CPU limit. Candidates are the single uvicorn process of the
+gateway or the CPU of the host, which also runs k6; neither was measured here.

@@ -70,7 +70,7 @@ Workload intensity (EXP-02), replica count (EXP-03) and resource limits (EXP-04)
 | RQ1 | EXP-01 | Reference       | 1 VU, unsecured       | L T E C M S | Completed |
 | RQ1 | EXP-02 | Operating point | VUs / request rate    | L T E C M   | Completed |
 | RQ1 | EXP-03 | Sensitivity     | Replica count         | L T E C M   | Planned   |
-| RQ1 | EXP-04 | Sensitivity     | CPU / memory limits   | L T E C M   | Planned   |
+| RQ1 | EXP-04 | Sensitivity     | CPU / memory limits   | L T E C M   | Completed |
 | RQ1 | EXP-05 | Verification    | Controls work         | A B         | Completed |
 | RQ1 | EXP-06 | Primary         | Baseline vs secure    | L T E C M S | Kind done |
 | RQ2 | EXP-07 | Primary         | Kind vs managed cloud | L T E C M S | Planned   |
@@ -430,7 +430,7 @@ Changes to hardware, model version, workload, resource allocation, or deployment
 | EXP-01 Baseline Load           | Completed            | -                             |
 | EXP-02 Load & Stress           | Completed (Kind)     | Results in methodology §9.6   |
 | EXP-03 Horizontal Scaling      | Planned              | Configure and execute         |
-| EXP-04 Resource Allocation     | Planned              | Gateway CPU 500 m vs 1000 m   |
+| EXP-04 Resource Allocation     | Completed (Kind)     | Results in methodology §10.4  |
 | EXP-05 Security Verification   | Completed            | -                             |
 | EXP-06 Secure Performance      | Kind done            | Repeat on cloud (EXP-07)      |
 | EXP-07 Local vs Cloud          | Planned              | Needs managed cloud access    |

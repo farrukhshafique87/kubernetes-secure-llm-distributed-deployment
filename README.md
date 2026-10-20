@@ -9,7 +9,7 @@ API-key gateway for an LLM service (FastAPI + Ollama) on Kubernetes.
 Built as part of my M.Sc. thesis in Information Technology at Frankfurt University of
 Applied Sciences.
 
-## Key findings (Kind, EXP-06 and EXP-02, 3 repetitions per configuration)
+## Key findings (Kind, EXP-06, EXP-02 and EXP-04, 3 repetitions per configuration)
 
 - With **all controls enabled**, the lightweight `/health` path became **+4.99 ms slower
   (+256.7 %)**: 6.94 ms instead of 1.95 ms on average.
@@ -24,6 +24,13 @@ stayed about constant (median +3 ms for the gateway, +5.5 ms for all controls), 
 CPU-limited gateway left little headroom: from 70 requests/s single runs collapsed, while
 the baseline handled every run up to 200 requests/s.
 [`results/exp-02-load/load-summary.md`](results/exp-02-load/load-summary.md)
+
+EXP-04 raised only the gateway CPU limit from 500 m to 1000 m: the gateway was no longer
+throttled (at most 1.3 % up to 150 requests/s), and the median cost per request did not change
+systematically (50 to 100 requests/s: +1.9 to +2.6 ms with 500 m, +2.1 to +3.2 ms with 1000 m).
+In EXP-02 every collapsed run was a run in which the gateway was throttled for at least 61 %
+of a 1-minute window.
+[`results/exp-04-gateway-cpu/load-summary.md`](results/exp-04-gateway-cpu/load-summary.md)
 
 | Overhead per request (median) | Collapsed runs per level |
 | --- | --- |
@@ -244,7 +251,8 @@ Evidence: [`results/exp-05-security-verification/`](results/exp-05-security-veri
 - Repeat the baseline-versus-secure comparison on a managed cloud cluster (EXP-07).
 - Add a `securityContext` to the Ollama deployment (non-root, capabilities dropped) and
   measure whether it changes anything.
-- Raise the gateway CPU limit and repeat the load levels (EXP-04), then test replicas (EXP-03).
+- Test the replica count (EXP-03), including whether a second gateway replica removes the
+  collapse at 150 requests/s seen with a 1000 m CPU limit (EXP-04).
 
 ## Tech stack
 

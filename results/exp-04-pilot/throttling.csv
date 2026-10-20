@@ -1,0 +1,9 @@
+config,rate,rep,container,samples,mean,max
+c5-gateway-cpu1000,100,1,fastapi,5,0.0,0.0
+c5-gateway-cpu1000,100,1,gateway,5,0.0,0.0
+c5-gateway-cpu1000,70,1,fastapi,5,0.0,0.0
+c5-gateway-cpu1000,70,1,gateway,5,0.0,0.0
+c5-gateway,100,1,fastapi,5,0.0,0.0
+c5-gateway,100,1,gateway,5,0.0871,0.1375
+c5-gateway,70,1,fastapi,5,0.0,0.0
+c5-gateway,70,1,gateway,5,0.011,0.0185
