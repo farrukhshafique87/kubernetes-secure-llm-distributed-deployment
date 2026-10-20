@@ -261,9 +261,11 @@ def main() -> None:
                 k = classes.get((c, r))
                 if not (b and k):
                     cells.append("-")
-                elif k["n_median"] < 2 or b["n_median"] < 2:
+                elif k["n_median"] < 2:
                     total = k["stable"] + k["transient"] + k["collapse"]
                     cells.append(f"n/a ({k['collapse']} of {total} collapsed)")
+                elif b["n_median"] < 2:
+                    cells.append("n/a (baseline: fewer than 2 runs)")
                 else:
                     cells.append(
                         f"{k['median'] - b['median']:+.2f} (n={k['n_median']})"

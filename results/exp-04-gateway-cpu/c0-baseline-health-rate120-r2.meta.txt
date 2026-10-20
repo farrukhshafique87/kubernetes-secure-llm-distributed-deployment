@@ -1,0 +1,6 @@
+run_id=exp-04-gateway-cpu-c0-baseline-health-rate120-r2
+start=2026-10-20T01:47:31Z
+end=2026-10-20T01:49:31Z
+script=tests/k6/health-path.js vus=1 rate=120 duration=2m base_url=http://localhost:8010
+monitor=1
+valid=true (no pod restarts during run)
