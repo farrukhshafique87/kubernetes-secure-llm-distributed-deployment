@@ -115,8 +115,8 @@ Run in WSL2 or another Linux shell. Versions used: see [Tech stack](#tech-stack)
 git clone https://github.com/farrukhshafique87/secure-llm-serving-kubernetes.git && cd secure-llm-serving-kubernetes
 make kind-up               # Kind cluster (1 control-plane + 2 workers) with Calico
 make build load            # build llm-api:1.0.0 and load it into Kind
-make deploy-baseline       # deploy C0
-make pull-model-baseline   # pull qwen2.5:0.5b into Ollama
+make deploy                # deploy C0 (CONFIG=c0-baseline is the default)
+make pull-model            # pull qwen2.5:0.5b into Ollama
 curl -s -X POST localhost:8010/chat -H 'Content-Type: application/json' -d '{"prompt":"Explain Kubernetes in one sentence."}'
 ```
 
@@ -131,8 +131,8 @@ cluster creation, all other steps ran as shown. Cluster creation itself was not 
 that day.
 
 Secure configuration (C6, needs Helm): `make secrets ingress linkerd`, `make build-gateway load-gateway`,
-`make deploy-secure`, `make pull-model-secure`. Only one environment should run at a time:
-`make pause-baseline` before starting another one (`make help` lists all targets).
+`make deploy pull-model CONFIG=c6-all`. Only one environment should run at a time:
+`make pause CONFIG=c0-baseline` before starting another one (`make help` lists all targets).
 `make kind-down` deletes the whole cluster.
 
 ## Results (EXP-06)
@@ -251,6 +251,9 @@ Evidence: [`results/exp-05-security-verification/`](results/exp-05-security-veri
 - Repeat the baseline-versus-secure comparison on a managed cloud cluster (EXP-07).
 - Add a `securityContext` to the Ollama deployment (non-root, capabilities dropped) and
   measure whether it changes anything.
+- After EXP-07, remove unused code from `llm-api` (empty packages, the `LOG_LEVEL` setting
+  that logging ignores, the `tenacity` retry that runs with one attempt) and rebuild the
+  images. Not done earlier so that all experiments use the same images.
 - Test the replica count (EXP-03), including whether a second gateway replica removes the
   collapse at 150 requests/s seen with a 1000 m CPU limit (EXP-04).
 
@@ -281,7 +284,6 @@ The Calico version is not in that file; it was read from the same Kind cluster o
 ├── apps/
 │   ├── llm-api/         # FastAPI service in front of Ollama
 │   └── llm-gateway/     # API-key gateway with route allowlist
-├── docker/              # Docker Compose setup for local development
 ├── docs/                # research notes, methodology, traceability matrix
 ├── kind/                # Kind cluster, Calico and Traefik configuration
 ├── kubernetes/

@@ -1,8 +1,0 @@
-01:53:51 fastapi-96b9b64cb-dzwq5 87m 54Mi ;ollama-54c996fff8-77ll8 1m 522Mi ;traefik-65d8fb58b7-hfrd7 1m 108Mi ;
-01:54:07 fastapi-96b9b64cb-dzwq5 86m 54Mi ;ollama-54c996fff8-77ll8 3m 522Mi ;traefik-65d8fb58b7-hfrd7 1m 108Mi ;
-01:54:22 fastapi-96b9b64cb-dzwq5 89m 54Mi ;ollama-54c996fff8-77ll8 1m 522Mi ;traefik-65d8fb58b7-hfrd7 1m 108Mi ;
-01:54:37 fastapi-96b9b64cb-dzwq5 90m 54Mi ;ollama-54c996fff8-77ll8 1m 522Mi ;traefik-65d8fb58b7-hfrd7 1m 108Mi ;
-01:54:52 fastapi-96b9b64cb-dzwq5 93m 54Mi ;ollama-54c996fff8-77ll8 1m 521Mi ;traefik-65d8fb58b7-hfrd7 1m 108Mi ;
-01:55:08 fastapi-96b9b64cb-dzwq5 93m 54Mi ;ollama-54c996fff8-77ll8 1m 522Mi ;traefik-65d8fb58b7-hfrd7 1m 108Mi ;
-01:55:23 fastapi-96b9b64cb-dzwq5 91m 54Mi ;ollama-54c996fff8-77ll8 1m 522Mi ;traefik-65d8fb58b7-hfrd7 1m 108Mi ;
-01:55:38 fastapi-96b9b64cb-dzwq5 91m 54Mi ;ollama-54c996fff8-77ll8 1m 522Mi ;traefik-65d8fb58b7-hfrd7 1m 108Mi ;

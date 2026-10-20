@@ -24,7 +24,7 @@ jobs:
       - name: Install ruff
         run: pip install ruff==0.12.7
       - name: Run ruff
-        run: ruff check apps
+        run: ruff check .
 
   test:
     name: Test (${{ matrix.app }})
